@@ -81,6 +81,7 @@ App.inhalt.welt = {
     rakete: {
       name: "In der Rakete", bild: "cockpit", ansage: "In der Rakete.", licht: [255, 255, 255], karte: [2, 0],
       rover: { x: 630, y: 690 }, boden: 520,
+      nachbarn: { rechts: "weltraum" },   // am rechten Rand startet der Countdown (das Spiel mit inhalt.ziel = "weltraum")
       tore: [
         { id: "ausstieg", x: 120, y: 600, r: 50, figur: "figurTuer", breite: 100, ziel: "raketenstation", ansage: "Wieder draußen an der Raketenstation." },
       ],
@@ -97,6 +98,7 @@ App.inhalt.welt = {
     weltraum: {
       name: "Weltraum", bild: "weltraum", ansage: "Im Weltraum.", licht: [80, 0, 255], karte: [3, 0],
       rover: { x: 480, y: 600 }, boden: 110,
+      nachbarn: { links: "rakete" },
       tore: [
         { id: "landung", x: 150, y: 590, r: 56, figur: "figurLandung", breite: 96, ziel: "raketenstation", ansage: "Gelandet! Zurück an der Raketenstation." },
       ],

@@ -7,7 +7,7 @@
 "use strict";
 
 const MBot = (() => {
-  const VERSION = "0.10.0";
+  const VERSION = "0.10.1";
 
   /* ---------- Konstanten: Makeblock Live-Mode-Protokoll (f3/f4) ---------- */
   const uuid16 = (x) => `0000${x}-0000-1000-8000-00805f9b34fb`;
@@ -255,7 +255,7 @@ const MBot = (() => {
       log("Bereit. Roboter sollte kurz blau leuchten und piepen.", "r");
       await pruefeFein();
       setStatus("on", `Verbunden: ${device.name || "mBot2"}`);
-      pruefeFaehigkeiten();
+      log(`Gemerkte Fähigkeiten: Lautstärke-Spitze ${faehig.spitze ? "ja" : "nein"}, Tasten/Joystick ${faehig.tasten ? "ja" : "nein"}`);
       return true;
     } catch (e) {
       if (e && e.name === "NotFoundError") { log("Suche abgebrochen oder kein Gerät gewählt.", "w"); setStatus("", "Nicht verbunden"); }
@@ -333,17 +333,29 @@ const MBot = (() => {
     if (nah) { try { beiWeg(); } catch (_) {} }
   }
 
-  /* ---------- Was kann dieser Roboter? (wird nach dem Verbinden im Hintergrund geprüft und protokolliert) ----------
-   * spitze: Lautstärke-Spitze über etwa 50 ms in EINEM Befehl. Ohne das fällt ein kurzes Klatschen
-   *         oft genau zwischen zwei Abfragen und wird nicht bemerkt.
-   * tasten: Tasten A/B und Joystick des CyberPi (für spätere Spiele, bisher nur protokolliert). */
-  const SPITZE = "max([(__import__('time').sleep_ms(6),cyberpi.get_loudness())[1] for _ in range(8)])";
+  /* ---------- Was kann dieser Roboter? ----------
+   * ACHTUNG: Diese Prüfung läuft NICHT mehr automatisch. In v0.10.0 wurde sie direkt nach dem Verbinden
+   * gesendet; der Roboter hat daraufhin jedes Mal die Verbindung getrennt (der Prüfbefehl enthielt
+   * __import__('time').sleep_ms). Unbekannte, zusammengesetzte Befehle deshalb nur von Hand aus der
+   * Testkonsole schicken. Das Ergebnis wird im Browser gemerkt und gilt dann auch für die App.
+   *   spitze: lautester von sechs Messwerten in EINEM Befehl (hilft, kurzes Klatschen nicht zu verpassen)
+   *   tasten: Tasten A/B und Joystick des CyberPi in einem Befehl (für spätere Spiele) */
+  const SPITZE = "max([cyberpi.get_loudness() for _ in range(6)])";
   const TASTEN = "[cyberpi.controller.is_press(k) for k in ('a','b','up','down','left','right','middle')]";
-  const faehig = { spitze: false, tasten: false };
-  async function pruefeFaehigkeiten() {
-    try { faehig.spitze = typeof (await evalExpr(SPITZE, 2500, true)) === "number"; } catch (_) { faehig.spitze = false; }
-    try { faehig.tasten = Array.isArray(await evalExpr(TASTEN, 2500, true)); } catch (_) { faehig.tasten = false; }
-    log(`Fähigkeiten des Roboters: Lautstärke-Spitze ${faehig.spitze ? "ja" : "nein"}, Tasten/Joystick ${faehig.tasten ? "ja" : "nein"}`, "r");
+  const merk = {
+    lies(k) { try { return localStorage.getItem(`mbot2-faehig-${k}`) === "1"; } catch (_) { return false; } },
+    setz(k, v) { try { localStorage.setItem(`mbot2-faehig-${k}`, v ? "1" : "0"); } catch (_) {} },
+  };
+  const faehig = { spitze: merk.lies("spitze"), tasten: merk.lies("tasten") };
+  // Nur von Hand aufrufen (Testkonsole). welche = "spitze" oder "tasten".
+  async function pruefeFaehigkeit(welche) {
+    const code = welche === "spitze" ? SPITZE : TASTEN;
+    merk.setz(welche, false); faehig[welche] = false;      // falls der Roboter dabei abstürzt, bleibt es aus
+    let ok = false;
+    try { const v = await evalExpr(code, 2500); ok = welche === "spitze" ? typeof v === "number" : Array.isArray(v); } catch (_) {}
+    faehig[welche] = ok; merk.setz(welche, ok);
+    log(`Fähigkeit „${welche}“: ${ok ? "ja" : "nein"}`, ok ? "r" : "w");
+    return ok;
   }
   // Lautstärke am Roboter-Mikrofon, 0 bis 100
   async function lautstaerke() {
@@ -610,7 +622,7 @@ const MBot = (() => {
     verbunden: () => bot.connected,
     verbinde, trenne,
     run, evalExpr,
-    move, tones, stopp, warteAufHand, beobachteHand, lautstaerke, faehig,
+    move, tones, stopp, warteAufHand, beobachteHand, lautstaerke, faehig, pruefeFaehigkeit,
     fahre, pruefeFein, aufnahme,
     kannFein: () => !!fein,
     epoche: () => epoche,

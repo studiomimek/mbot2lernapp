@@ -1,7 +1,7 @@
 /* kern.js – Grundgerüst der App: Namensraum, Protokoll, Speicher, Sprache, Töne, Aufnahmen */
 "use strict";
 
-const App = { VERSION: "0.10.0", inhalt: {}, aufgaben: {}, bilder: {} };
+const App = { VERSION: "0.10.1", inhalt: {}, aufgaben: {}, bilder: {} };
 
 (() => {
   /* ---------- Kleine Hilfen ---------- */

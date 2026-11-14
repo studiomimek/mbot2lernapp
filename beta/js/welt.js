@@ -194,6 +194,9 @@
       z.el.classList.add("gewaehlt");
       setTimeout(() => App.starteAufgabe(z.e), 350);
     } else if (z.art === "rand") {
+      // Führt ein Spiel dieses Ortes zum Nachbarn (Countdown → Weltraum), startet am Rand dieses Spiel
+      const spiel = (ort.einstiege || []).find((e) => e.inhalt && e.inhalt.ziel === z.zielId);
+      if (spiel) { App.audio.klang("neugierig"); setTimeout(() => App.starteAufgabe(spiel), 250); return true; }
       App.audio.klang("tipp");
       schicht.classList.add(`raus-${z.richtung}`);
       setTimeout(() => zeige(z.zielId, { von: GEGEN[z.richtung], pos: stelle, rein: z.richtung, ansage: W.orte[z.zielId].ansage }), 220);

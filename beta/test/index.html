@@ -77,7 +77,7 @@
 </head>
 <body>
 <header>
-  <h1>mBot2 Testkonsole <small>v0.10.0 · <a href="../index.html" style="color:inherit">zur App</a></small></h1>
+  <h1>mBot2 Testkonsole <small>v0.10.1 · <a href="../index.html" style="color:inherit">zur App</a></small></h1>
   <span id="status" class="status">Nicht verbunden</span>
 </header>
 
@@ -239,6 +239,8 @@
       <button data-need data-move id="btnExpFein">Stufenlos fahren (1 s geradeaus)</button>
       <button data-need id="btnExpAufnahme">Aufnahme 3 s und abspielen</button>
       <button data-need data-move id="btnExpDisco">Disco</button>
+      <button data-need id="btnExpSpitze">Lautstärke-Spitze (ein Befehl)</button>
+      <button data-need id="btnExpTastenListe">Tasten-Liste (ein Befehl)</button>
     </div>
   </section>
 
@@ -254,7 +256,7 @@
   </section>
 </main>
 
-<script src="../mbot.js?v=0.10.0"></script>
+<script src="../mbot.js?v=0.10.1"></script>
 <script>
 "use strict";
 
@@ -583,6 +585,15 @@ bindAction($("btnExpAufnahme"), async () => {
   await run("cyberpi.audio.play_record()");
 });
 bindAction($("btnExpDisco"), () => reakt("disco"));
+// Zusammengesetzte Befehle: können die Verbindung trennen. Deshalb einzeln und nur von Hand.
+bindAction($("btnExpSpitze"), async () => {
+  log("Experiment: sechs Lautstärke-Messungen in einem Befehl. Trennt sich danach die Verbindung, kann der Roboter das nicht.", "s");
+  await MBot.pruefeFaehigkeit("spitze");
+});
+bindAction($("btnExpTastenListe"), async () => {
+  log("Experiment: alle Tasten und den Joystick in einem Befehl abfragen. Trennt sich danach die Verbindung, kann der Roboter das nicht.", "s");
+  await MBot.pruefeFaehigkeit("tasten");
+});
 
 /* ---------- Protokoll-Werkzeuge ---------- */
 $("btnClearLog").addEventListener("click", () => { logEl.innerHTML = ""; });
@@ -605,7 +616,7 @@ function showNoBluetooth() {
 }
 
 (function init() {
-  log(`Testkonsole v0.10.0 gestartet (mbot.js ${MBot.VERSION})`);
+  log(`Testkonsole v0.10.1 gestartet (mbot.js ${MBot.VERSION})`);
   log(`Browser: ${navigator.userAgent}`);
   log(`Sichere Verbindung (HTTPS/Datei): ${window.isSecureContext ? "ja" : "NEIN – Bluetooth braucht HTTPS"}`, window.isSecureContext ? "" : "e");
   log(`Web Bluetooth: ${navigator.bluetooth ? "vorhanden" : "fehlt"}`, navigator.bluetooth ? "" : "e");
