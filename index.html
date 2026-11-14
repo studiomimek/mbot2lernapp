@@ -77,7 +77,7 @@
 </head>
 <body>
 <header>
-  <h1>mBot2 Testkonsole <small>Prototyp v0.2</small></h1>
+  <h1>mBot2 Testkonsole <small>Prototyp v0.3</small></h1>
   <span id="status" class="status">Nicht verbunden</span>
 </header>
 
@@ -184,6 +184,7 @@
     <p class="hint">Funktioniert auch ohne Roboter.</p>
     <div class="row">
       <select id="voice" style="flex:1 1 220px"></select>
+      <button id="btnVoices">Stimmen neu laden</button>
     </div>
     <div class="row">
       <span>Tempo</span>
@@ -239,6 +240,20 @@ const MODE_NO_RESPONSE = 0x00, MODE_WITH_RESPONSE = 0x01;
 const ONLINE_MODE_FRAME = new Uint8Array([0xF3, 0xF6, 0x03, 0x00, 0x0D, 0x00, 0x01, 0x0E, 0xF4]);
 const BLE_CHUNK = 20, CHUNK_DELAY = 8;
 
+// Bluefy liefert "FFE3", Chrome "0000ffe3-0000-1000-8000-00805f9b34fb"
+function shortUuid(u) {
+  const s = String(u).toLowerCase().replace(/^0x/, "");
+  if (/^[0-9a-f]{1,8}$/.test(s)) return s.padStart(8, "0").slice(-4);
+  const m = s.match(/^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/);
+  return m ? m[1] : s;
+}
+function errText(e) {
+  if (e == null) return "unbekannter Fehler";
+  if (typeof e === "string") return e;
+  const parts = [e.name, e.message, e.code].filter((x) => x !== undefined && x !== "");
+  if (parts.length) return parts.join(": ");
+  try { return JSON.stringify(e); } catch (_) { return String(e); }
+}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const $ = (id) => document.getElementById(id);
 const hex = (u8) => Array.from(u8, (b) => b.toString(16).padStart(2, "0")).join(" ");
@@ -314,7 +329,7 @@ function log(msg, cls = "") {
   logEl.scrollTop = logEl.scrollHeight;
 }
 window.addEventListener("error", (e) => log(`JS-Fehler: ${e.message}`, "e"));
-window.addEventListener("unhandledrejection", (e) => log(`Fehler: ${e.reason && e.reason.message || e.reason}`, "e"));
+window.addEventListener("unhandledrejection", (e) => log(`Fehler: ${errText(e.reason)}`, "e"));
 
 /* ---------- Bluetooth-Verbindung ---------- */
 const bot = {
@@ -422,8 +437,8 @@ async function findCharacteristics(server) {
       const p = c.properties;
       const props = ["read", "write", "writeWithoutResponse", "notify", "indicate"].filter((k) => p[k]).join(", ");
       log(`  Kanal ${c.uuid}  [${props}]`);
-      if (!write && c.uuid.startsWith("0000" + WRITE_SHORT)) write = c;
-      if (!notify && c.uuid.startsWith("0000" + NOTIFY_SHORT)) notify = c;
+      if (!write && shortUuid(c.uuid) === WRITE_SHORT) write = c;
+      if (!notify && shortUuid(c.uuid) === NOTIFY_SHORT) notify = c;
     }
   }
   return { write, notify };
@@ -431,6 +446,7 @@ async function findCharacteristics(server) {
 
 async function connect(showAll) {
   if (!navigator.bluetooth) { showNoBluetooth(); return; }
+  bot.device = null;
   try {
     setStatus("busy", "Suche …");
     const options = showAll
@@ -465,8 +481,9 @@ async function connect(showAll) {
     await run("cyberpi.audio.play_tone(660,0.15)");
     log("Bereit. Roboter sollte kurz blau leuchten und piepen.", "r");
   } catch (e) {
-    if (e.name === "NotFoundError") { log("Suche abgebrochen oder kein Gerät gewählt.", "w"); setStatus("", "Nicht verbunden"); }
-    else { log(`Verbindung fehlgeschlagen: ${e.name}: ${e.message}`, "e"); setStatus("err", "Fehler"); }
+    if (e && e.name === "NotFoundError") { log("Suche abgebrochen oder kein Gerät gewählt.", "w"); setStatus("", "Nicht verbunden"); }
+    else if (!bot.device) { log(`Suche beendet ohne Gerät (${errText(e)}). Wenn der mBot2 nicht in der Liste stand: „Alle Geräte zeigen“.`, "w"); setStatus("", "Nicht verbunden"); }
+    else { log(`Verbindung fehlgeschlagen: ${errText(e)}`, "e"); setStatus("err", "Fehler"); }
     try { bot.device && bot.device.gatt.connected && bot.device.gatt.disconnect(); } catch (_) {}
   }
 }
@@ -545,7 +562,7 @@ const actions = {
 
 function bindAction(el, fn) {
   el.addEventListener("click", async () => {
-    try { await fn(); } catch (e) { log(`Fehler: ${e.message}`, "e"); }
+    try { await fn(); } catch (e) { log(`Fehler: ${errText(e)}`, "e"); }
   });
 }
 document.querySelectorAll("[data-act]").forEach((el) => bindAction(el, actions[el.dataset.act]));
@@ -626,7 +643,19 @@ function speak(text) {
 
 $("voice").addEventListener("change", () => { const v = voices[+$("voice").value]; if (v) store.set("voice", v.name); });
 $("rate").addEventListener("input", () => { $("rateVal").textContent = $("rate").value; });
-$("btnSpeak").addEventListener("click", () => { log(`Spreche: „${$("speakText").value}“`); speak($("speakText").value); });
+$("btnSpeak").addEventListener("click", () => {
+  if (voices.length < 2) loadVoices();
+  const v = voices[+$("voice").value];
+  log(`Spreche mit ${v ? v.name + " (" + v.lang + ")" : "Standardstimme"}: „${$("speakText").value}“`);
+  speak($("speakText").value);
+});
+$("btnVoices").addEventListener("click", () => {
+  loadVoices();
+  const all = "speechSynthesis" in window ? speechSynthesis.getVoices() : [];
+  log(`Stimmen: ${all.length} insgesamt, ${voices.length} angezeigt`);
+  all.forEach((v) => log(`  ${v.name} (${v.lang})${v.localService ? "" : " [online]"}`));
+});
+$("voice").addEventListener("focus", () => { if (voices.length < 2) loadVoices(); });
 
 /* ---------- Mini-Spiel ---------- */
 const LETTERS = ["M", "A", "O", "L", "S", "E", "I", "T", "R", "N", "U", "H"];
@@ -698,7 +727,7 @@ function showNoBluetooth() {
 }
 
 (function init() {
-  log("Prototyp v0.2 gestartet");
+  log("Prototyp v0.3 gestartet");
   log(`Browser: ${navigator.userAgent}`);
   log(`Sichere Verbindung (HTTPS/Datei): ${window.isSecureContext ? "ja" : "NEIN – Bluetooth braucht HTTPS"}`, window.isSecureContext ? "" : "e");
   log(`Web Bluetooth: ${navigator.bluetooth ? "vorhanden" : "fehlt"}`, navigator.bluetooth ? "" : "e");
