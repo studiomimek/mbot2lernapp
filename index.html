@@ -77,7 +77,7 @@
 </head>
 <body>
 <header>
-  <h1>mBot2 Testkonsole <small>Prototyp v0.3</small></h1>
+  <h1>mBot2 Testkonsole <small>Prototyp v0.4</small></h1>
   <span id="status" class="status">Nicht verbunden</span>
 </header>
 
@@ -125,17 +125,22 @@
         <option value="16">klein (16)</option>
         <option value="24">mittel (24)</option>
         <option value="32" selected>groß (32)</option>
-        <option value="48">48 (Test)</option>
-        <option value="64">64 (Test)</option>
-        <option value="96">96 (Test)</option>
       </select>
     </div>
     <div class="row">
       <button data-need id="btnShow">Anzeigen</button>
       <button data-need id="btnClear">Display leeren</button>
-      <button data-need id="btnDir">Display-Funktionen abfragen</button>
     </div>
-    <p class="hint" style="margin-top:10px">Die gewählte Größe gilt auch im Mini-Spiel. Größen ab 48 sind ein Test: Zeigt das Display nichts oder klein, kann der Roboter diese Größe nicht.</p>
+    <p class="hint" style="margin-top:14px"><b>Test: sehr große Buchstaben.</b> 32 ist die größte Schrift. Größer geht vielleicht über ein „Sprite“ (Grafikobjekt). Jeder Schritt steht im Protokoll.</p>
+    <div class="row">
+      <select id="spriteZoom">
+        <option value="200">Zoom 200 %</option>
+        <option value="300" selected>Zoom 300 %</option>
+        <option value="400">Zoom 400 %</option>
+      </select>
+      <button data-need id="btnSprite">Groß anzeigen (Test)</button>
+      <button data-need id="btnSpriteOff">Groß ausblenden</button>
+    </div>
   </section>
 
   <section>
@@ -150,7 +155,7 @@
 
   <section>
     <h2><span class="num">5</span>Bewegung</h2>
-    <div class="warnbox">Roboter auf den Boden stellen. Alle Bewegungen sind kurz und stoppen von selbst.</div>
+    <div class="warnbox">Roboter auf den Boden stellen. Bewegungen stoppen nach kurzer Zeit von selbst, STOPP hält sofort an.</div>
     <label class="check"><input type="checkbox" id="allowMove"> Bewegung erlauben</label>
     <div class="row">
       <span>Fahrtempo</span>
@@ -185,6 +190,9 @@
     <div class="row">
       <select id="voice" style="flex:1 1 220px"></select>
       <button id="btnVoices">Stimmen neu laden</button>
+    </div>
+    <div class="row">
+      <label class="check"><input type="checkbox" id="allVoices"> Auch fremdsprachige Stimmen zeigen</label>
     </div>
     <div class="row">
       <span>Tempo</span>
@@ -451,7 +459,7 @@ async function connect(showAll) {
     setStatus("busy", "Suche …");
     const options = showAll
       ? { acceptAllDevices: true, optionalServices: SERVICES }
-      : { filters: [...NAME_PREFIXES.map((p) => ({ namePrefix: p })), { services: [SERVICES[0]] }], optionalServices: SERVICES };
+      : { filters: [{ namePrefix: "Makeblock" }], optionalServices: SERVICES };
     log(showAll ? "Suche alle Bluetooth-Geräte …" : "Suche mBot2 …");
     const device = await navigator.bluetooth.requestDevice(options);
     bot.device = device;
@@ -504,14 +512,40 @@ const canMove = () => $("allowMove").checked;
 const speed = () => +$("moveSpeed").value;
 const letterSize = () => $("dispSize").value;
 
-async function move(fn, speed, secs) {
+// Zeitgesteuerte Befehle wie mbot2.forward(50,1) blockieren den Roboter, bis sie fertig sind,
+// dann kommt STOPP erst danach an. Deshalb: ohne Zeit losfahren, die Seite stoppt nach Ablauf.
+let moveEpoch = 0;
+const stopped = (ep) => ep !== moveEpoch;
+
+async function move(fn, spd, secs, ep = moveEpoch) {
   if (!canMove()) { log("Bewegung übersprungen (nicht erlaubt)", "w"); return; }
-  await run(`mbot2.${fn}(${speed},${secs})`);
-  await sleep(secs * 1000 + 100);
+  if (stopped(ep)) return;
+  await run(`mbot2.${fn}(${spd})`);
+  const end = Date.now() + secs * 1000;
+  while (Date.now() < end && !stopped(ep)) await sleep(20);
+  if (!stopped(ep)) await run("mbot2.EM_stop()");
 }
 
-async function tones(list) {
-  for (const [f, s] of list) { await run(`cyberpi.audio.play_tone(${f},${s})`); await sleep(s * 1000 + 30); }
+async function spin(ep) {
+  if (!canMove()) { log("Bewegung übersprungen (nicht erlaubt)", "w"); return; }
+  // Drehen, bis der Lagesensor eine ganze Runde meldet (höchstens 8 s)
+  await run("cyberpi.reset_yaw()");
+  let last = 0, turned = 0;
+  try { last = +(await evalExpr("cyberpi.get_yaw()", 1500)) || 0; } catch (_) {}
+  await run(`mbot2.turn_right(${speed()})`);
+  const end = Date.now() + 8000;
+  while (Date.now() < end && !stopped(ep) && Math.abs(turned) < 345) {
+    let y;
+    try { y = +(await evalExpr("cyberpi.get_yaw()", 1000)); } catch (_) { break; }
+    let d = y - last; if (d > 180) d -= 360; if (d < -180) d += 360;
+    turned += d; last = y;
+  }
+  if (!stopped(ep)) await run("mbot2.EM_stop()");
+  log(`Gedreht: ${Math.round(Math.abs(turned))}°`);
+}
+
+async function tones(list, ep = moveEpoch) {
+  for (const [f, s] of list) { if (stopped(ep)) return; await run(`cyberpi.audio.play_tone(${f},${s})`); await sleep(s * 1000 + 30); }
 }
 
 const actions = {
@@ -527,34 +561,33 @@ const actions = {
   back: () => move("backward", speed(), 1.0),
   left: () => move("turn_left", speed(), 0.5),
   right: () => move("turn_right", speed(), 0.5),
-  async spin() {
-    if (!canMove()) return;
-    await run("mbot2.turn(360)");
-    await sleep(3000);
-  },
-  stop: () => run("mbot2.EM_stop()"),
+  spin: () => spin(moveEpoch),
+  stop: () => { moveEpoch++; log("STOPP", "w"); return run("mbot2.EM_stop()"); },
 
   async richtig() {
+    const ep = moveEpoch;
     await run("cyberpi.led.on(0,255,0)");
-    await tones([[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.25]]);
-    if (canMove()) { await move("turn_left", 50, 0.35); await move("turn_right", 50, 0.35); }
+    await tones([[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.25]], ep);
+    if (canMove()) { await move("turn_left", 50, 0.35, ep); await move("turn_right", 50, 0.35, ep); }
     await sleep(600);
     await run("cyberpi.led.on(0,0,0)");
   },
   async falsch() {
+    const ep = moveEpoch;
     await run("cyberpi.led.on(255,60,0)");
-    await tones([[330, 0.2], [247, 0.35]]);
-    if (canMove()) { await move("turn_left", 30, 0.12); await move("turn_right", 30, 0.12); }
+    await tones([[330, 0.2], [247, 0.35]], ep);
+    if (canMove()) { await move("turn_left", 30, 0.12, ep); await move("turn_right", 30, 0.12, ep); }
     await sleep(500);
     await run("cyberpi.led.on(0,0,0)");
   },
   async tanz() {
+    const ep = moveEpoch;
     await run("cyberpi.led.play(name='rainbow')");
-    await tones([[523, 0.1], [784, 0.1], [523, 0.1], [784, 0.1]]);
+    await tones([[523, 0.1], [784, 0.1], [523, 0.1], [784, 0.1]], ep);
     if (canMove()) {
-      await move("turn_left", 50, 0.4); await move("turn_right", 50, 0.4);
-      await move("forward", 30, 0.4); await move("backward", 30, 0.4);
-      await move("turn_right", 60, 0.8);
+      await move("turn_left", 50, 0.4, ep); await move("turn_right", 50, 0.4, ep);
+      await move("forward", 30, 0.4, ep); await move("backward", 30, 0.4, ep);
+      await move("turn_right", 60, 0.8, ep);
     }
     await run("cyberpi.led.on(0,0,0)");
   },
@@ -579,10 +612,31 @@ $("vol").addEventListener("change", () => run(`cyberpi.audio.set_vol(${$("vol").
 const safeText = (s) => s.replace(/[\\'"\n\r]/g, "").slice(0, 12);
 bindAction($("btnShow"), () => run(`cyberpi.display.show_label('${safeText($("dispText").value)}',${$("dispSize").value},'center')`));
 bindAction($("btnClear"), () => run("cyberpi.display.clear()"));
-bindAction($("btnDir"), async () => {
-  log("Frage verfügbare Funktionen ab (für die nächste Version) …");
-  await evalExpr("str(dir(cyberpi.display))", 5000);
-  await evalExpr("str([n for n in dir(cyberpi) if not n.startswith('_')])", 8000);
+
+// Versuch: großer Buchstabe als Sprite. Jeder Schritt wartet auf Antwort,
+// damit im Protokoll steht, welcher Befehl klappt (Antwort) und welcher nicht (keine Antwort).
+async function tryStep(code) {
+  try { await evalExpr(code, 2500); return true; }
+  catch (e) { log(`  ✗ ${code}: keine Antwort (Befehl unbekannt oder Fehler)`, "w"); return false; }
+}
+bindAction($("btnSprite"), async () => {
+  const L = safeText($("dispText").value) || "M";
+  const zoom = $("spriteZoom").value;
+  log(`Sprite-Test: „${L}“ mit ${zoom} %`, "s");
+  await tryStep("cyberpi.display.clear()");
+  if (!(await tryStep("globals().__setitem__('_sp', cyberpi.sprite()) if '_sp' not in globals() else 0"))) return;
+  await tryStep("str([n for n in dir(_sp) if not n.startswith('_')])");
+  await tryStep(`_sp.draw_text('${L}')`);
+  await tryStep(`_sp.set_size(${zoom})`);
+  await tryStep("_sp.move_to(64,64)");
+  await tryStep("_sp.show()");
+  await tryStep("cyberpi.screen.render()");
+  log("Sprite-Test fertig. Was zeigt das Display?", "s");
+});
+bindAction($("btnSpriteOff"), async () => {
+  await tryStep("_sp.hide()");
+  await tryStep("cyberpi.screen.render()");
+  await tryStep("cyberpi.display.clear()");
 });
 
 bindAction($("btnBattery"), async () => {
@@ -613,7 +667,7 @@ function loadVoices() {
   if (!("speechSynthesis" in window)) return;
   const all = speechSynthesis.getVoices();
   const de = all.filter((v) => (v.lang || "").toLowerCase().startsWith("de"));
-  voices = de.length ? de : all;
+  voices = ($("allVoices").checked || !de.length) ? all : de;
   const sel = $("voice");
   const saved = store.get("voice");
   sel.innerHTML = "";
@@ -655,6 +709,7 @@ $("btnVoices").addEventListener("click", () => {
   log(`Stimmen: ${all.length} insgesamt, ${voices.length} angezeigt`);
   all.forEach((v) => log(`  ${v.name} (${v.lang})${v.localService ? "" : " [online]"}`));
 });
+$("allVoices").addEventListener("change", loadVoices);
 $("voice").addEventListener("focus", () => { if (voices.length < 2) loadVoices(); });
 
 /* ---------- Mini-Spiel ---------- */
@@ -727,7 +782,7 @@ function showNoBluetooth() {
 }
 
 (function init() {
-  log("Prototyp v0.3 gestartet");
+  log("Prototyp v0.4 gestartet");
   log(`Browser: ${navigator.userAgent}`);
   log(`Sichere Verbindung (HTTPS/Datei): ${window.isSecureContext ? "ja" : "NEIN – Bluetooth braucht HTTPS"}`, window.isSecureContext ? "" : "e");
   log(`Web Bluetooth: ${navigator.bluetooth ? "vorhanden" : "fehlt"}`, navigator.bluetooth ? "" : "e");
