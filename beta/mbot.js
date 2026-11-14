@@ -7,7 +7,7 @@
 "use strict";
 
 const MBot = (() => {
-  const VERSION = "0.6.0";
+  const VERSION = "0.7.0";
 
   /* ---------- Konstanten: Makeblock Live-Mode-Protokoll (f3/f4) ---------- */
   const uuid16 = (x) => `0000${x}-0000-1000-8000-00805f9b34fb`;
@@ -155,16 +155,17 @@ const MBot = (() => {
   }
 
   // Ausdruck mit Antwort ({"ret": wert} über ffe2)
-  async function evalExpr(code, timeout = 3000) {
+  // leise = true: nicht ins Protokoll schreiben (für Abfragen, die sich oft wiederholen)
+  async function evalExpr(code, timeout = 3000, leise = false) {
     const idx = nextIdx();
-    log(`→ ${code}  (wartet auf Antwort)`);
+    if (!leise) log(`→ ${code}  (wartet auf Antwort)`);
     const answer = new Promise((resolve, reject) => {
       bot.pending.set(idx, resolve);
       setTimeout(() => { if (bot.pending.delete(idx)) reject(new Error(`Keine Antwort auf „${code}“ nach ${timeout / 1000} s`)); }, timeout);
     });
     await writeFrame(buildScriptFrame(code, idx, MODE_WITH_RESPONSE));
     const v = await answer;
-    log(`← ${code} = ${JSON.stringify(v)}`, "r");
+    if (!leise) log(`← ${code} = ${JSON.stringify(v)}`, "r");
     return v;
   }
 
@@ -335,6 +336,22 @@ const MBot = (() => {
 
   const ZAEHLTOENE = [523, 587, 659, 698, 784, 880, 988, 1047, 1175, 1319];
   const tempo = () => Math.max(20, Math.min(60, +einstellungen.tempo || 50));
+  const zufall = (liste) => liste[Math.floor(Math.random() * liste.length)];
+
+  // Zwitschern wie ein kleiner Filmroboter: viele sehr kurze Töne in wechselnder Höhe
+  const ZIRP = [988, 1175, 1319, 1568, 1760, 2093, 2349, 2637];
+  const zwitscher = (n) => Array.from({ length: n }, () => [zufall(ZIRP), zufall([0.04, 0.05, 0.06, 0.08])]);
+  const FROH = () => [...zwitscher(4), [2093, 0.05], [2637, 0.12]];
+  const FRAGE = [[1175, 0.05], [1568, 0.05], [1319, 0.04], [2349, 0.12]];
+  const OHOH = [[587, 0.12], [440, 0.2]];
+
+  // Kleine Bewegungen, jeweils höchstens 0,4 s am Stück
+  const BEWEGUNG = {
+    wackeln: async (ep) => { await move("turn_left", tempo(), 0.3, ep); await move("turn_right", tempo(), 0.3, ep); },
+    nicken: async (ep) => { await move("forward", 40, 0.22, ep); await move("backward", 40, 0.22, ep); },
+    drehen: async (ep) => { await move("turn_right", tempo(), 0.4, ep); await move("turn_left", tempo(), 0.4, ep); },
+    zappeln: async (ep) => { for (let i = 0; i < 2; i++) { await move("turn_left", 40, 0.12, ep); await move("turn_right", 40, 0.12, ep); } },
+  };
 
   const reaktion = {
     // Text (z. B. Buchstabe oder Zahl) auf dem Roboter-Display; Schriftgröße 32 ist das Maximum
@@ -344,25 +361,26 @@ const MBot = (() => {
     // Ton beim Antippen des n-ten Dings (Tonleiter aufwärts)
     zaehlton: (n) => still(`cyberpi.audio.play_tone(${ZAEHLTOENE[(Math.max(1, n) - 1) % ZAEHLTOENE.length]},0.08)`),
 
-    // Aufgabe beginnt: „?“ und zwei Töne
+    // Aufgabe beginnt: „?“, fragendes Zwitschern, kurzes Nicken
     neugierig: alsReaktion("neugierig", async (ep) => {
       await run("cyberpi.display.show_label('?',32,'center')");
-      await tones([[660, 0.08], [880, 0.12]], ep);
+      await tones(FRAGE, ep);
+      await BEWEGUNG.nicken(ep);
     }),
 
+    // Richtige Antwort: grün, fröhliches Zwitschern, eine von vier Bewegungen
     richtig: alsReaktion("richtig", async (ep) => {
       await run("cyberpi.led.on(0,255,0)");
-      await tones([[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.25]], ep);
-      await move("turn_left", tempo(), 0.3, ep);
-      await move("turn_right", tempo(), 0.3, ep);
-      await sleep(500);
+      await tones(FROH(), ep);
+      await BEWEGUNG[zufall(Object.keys(BEWEGUNG))](ep);
+      await sleep(400);
       if (!gestoppt(ep)) await run(grund());
     }),
 
     // Falsche Antwort: sanft, kein Alarm
     nochmal: alsReaktion("nochmal", async (ep) => {
       await run("cyberpi.led.on(255,120,0)");
-      await tones([[392, 0.15], [330, 0.25]], ep);
+      await tones(OHOH, ep);
       await move("turn_left", 30, 0.12, ep);
       await move("turn_right", 30, 0.12, ep);
       await sleep(400);
@@ -381,17 +399,40 @@ const MBot = (() => {
       if (!gestoppt(ep)) await run(grund());
     }),
 
-    // Aufgabe geschafft: Regenbogen, Melodie, kurzer Tanz
+    // Eine Silbe mitschwingen: Ton, Lichtblitz, kleiner Ruck (abwechselnd vor und zurück)
+    silbe: alsReaktion("silbe", async (ep, i = 0) => {
+      await run("cyberpi.led.on(255,200,0)");
+      await tones([[880, 0.1]], ep);                      // wartet, bis der Ton vorbei ist (er blockiert den Roboter)
+      await move(i % 2 ? "backward" : "forward", 35, 0.15, ep);
+      if (!gestoppt(ep)) await run(grund());
+    }),
+
+    // Raketenstart: Töne steigen an, dann ein Satz nach vorn und wieder zurück
+    rakete: alsReaktion("rakete", async (ep) => {
+      await run("cyberpi.led.on(255,40,0)");
+      await tones([[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.1], [1319, 0.1], [1568, 0.25]], ep);
+      if (!gestoppt(ep)) await run("cyberpi.led.on(255,255,255)");
+      await move("forward", 45, 0.4, ep);
+      await move("backward", 45, 0.4, ep);
+      if (!gestoppt(ep)) await run(grund());
+    }),
+
+    // Aufgabe geschafft: Regenbogen, langes Zwitschern, kleiner Tanz
     feier: alsReaktion("feier", async (ep) => {
       await run("cyberpi.led.play(name='rainbow')");
-      await tones([[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.1], [784, 0.1], [1047, 0.3]], ep);
-      await move("turn_left", tempo(), 0.4, ep);
-      await move("turn_right", tempo(), 0.4, ep);
-      await move("forward", 30, 0.4, ep);
-      await move("backward", 30, 0.4, ep);
-      await move("turn_right", tempo(), 0.4, ep);
-      await move("turn_left", tempo(), 0.4, ep);
+      await tones([...zwitscher(8), [1568, 0.08], [2093, 0.08], [2637, 0.25]], ep);
+      await BEWEGUNG.wackeln(ep);
+      await BEWEGUNG.nicken(ep);
+      await BEWEGUNG.drehen(ep);
       await sleep(300);
+      if (!gestoppt(ep)) await run(grund());
+    }),
+
+    // Etwas entdeckt: weißes Licht, kurzes Zwitschern, Zappeln
+    staunen: alsReaktion("staunen", async (ep) => {
+      await run("cyberpi.led.on(255,255,255)");
+      await tones(zwitscher(3), ep);
+      await BEWEGUNG.zappeln(ep);
       if (!gestoppt(ep)) await run(grund());
     }),
 
@@ -405,6 +446,23 @@ const MBot = (() => {
     }),
   };
 
+  /* ---------- Eingabe über den Roboter ----------
+   * Wartet, bis jemand die Hand vor den Ultraschallsensor hält (näher als 15 cm, zweimal hintereinander gemessen).
+   * weiter() = false bricht ab. Ergebnis: true = Hand erkannt.
+   */
+  async function warteAufHand(maxMs = 15000, weiter = () => true) {
+    const ende = Date.now() + maxMs;
+    let nah = 0;
+    while (bot.connected && Date.now() < ende && weiter()) {
+      let d = NaN;
+      try { d = +(await evalExpr("cyberpi.ultrasonic2.get(1)", 1200, true)); } catch (_) {}
+      if (d > 0 && d < 15) { if (++nah >= 2) { log(`Hand erkannt (${d} cm)`, "r"); return true; } }
+      else nah = 0;
+      await sleep(200);
+    }
+    return false;
+  }
+
   return {
     VERSION,
     einstellungen,
@@ -414,7 +472,7 @@ const MBot = (() => {
     verbunden: () => bot.connected,
     verbinde, trenne,
     run, evalExpr,
-    move, tones, stopp,
+    move, tones, stopp, warteAufHand,
     epoche: () => epoche,
     gestoppt,
     reaktion,

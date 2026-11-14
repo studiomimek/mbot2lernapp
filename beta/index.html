@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Die Bucht – mBot2-Lernapp</title>
-<link rel="stylesheet" href="stil.css?v=0.6.0">
+<link rel="stylesheet" href="stil.css?v=0.7.0">
 </head>
 <body>
 
@@ -22,7 +22,13 @@
   <div id="punkte" class="nur-aufgabe"></div>
   <button id="btn-stopp" aria-label="Roboter anhalten">STOPP</button>
   <button id="btn-robo" class="knopf" aria-label="Roboter verbinden"><i id="robo-licht"></i></button>
-  <div id="version" aria-label="Elternbereich: lange drücken"></div>
+
+  <!-- Griff zum Elternbereich: Zahnrad eine Sekunde gedrückt halten -->
+  <div id="eltern-griff" aria-label="Elternbereich: gedrückt halten">
+    <span id="eltern-hinweis">Für Eltern: Zahnrad gedrückt halten</span>
+    <span id="version"></span>
+    <span id="eltern-zahnrad"></span>
+  </div>
 
   <!-- Feier und Schatzkiste -->
   <div id="feier" class="schicht aus"></div>
@@ -34,7 +40,7 @@
     <button id="btn-los" aria-label="Los geht's"></button>
   </div>
 
-  <!-- Elternbereich (Versionsnummer unten rechts lange drücken) -->
+  <!-- Elternbereich -->
   <div id="eltern" class="schicht aus">
     <div class="e-inhalt">
       <div class="e-kopf">
@@ -42,6 +48,14 @@
         <span class="e-version"></span>
         <button id="e-zu" class="e-knopf e-haupt">Schließen</button>
       </div>
+
+      <section>
+        <h3>Buchstaben</h3>
+        <p class="e-hinweis">Antippen schaltet einen Buchstaben ein oder aus. Blau = wird geübt. Gestrichelt = nur beim Laute-Hören (kein Nachspuren).</p>
+        <div id="e-buchstaben"></div>
+        <p id="e-buchstaben-hinweis" class="e-hinweis"></p>
+        <div class="e-reihe"><button id="e-buchstaben-vorgabe" class="e-knopf">Zurück auf M A L O U S R E</button></div>
+      </section>
 
       <section>
         <h3>Roboter</h3>
@@ -60,15 +74,15 @@
       </section>
 
       <section>
-        <h3>Stimme</h3>
-        <div class="e-reihe"><select id="e-stimme"></select><button id="e-probe" class="e-knopf">Probe hören</button></div>
+        <h3>Stimme und Klänge</h3>
+        <div class="e-reihe"><select id="e-stimme"></select><button id="e-probe" class="e-knopf">Stimme hören</button><button id="e-probe-klang" class="e-knopf">Zwitschern hören</button></div>
         <div class="e-reihe"><span class="e-name">Sprechtempo</span><input type="range" id="e-sprechtempo" min="0.6" max="1.1" step="0.05"><span id="e-sprechtempo-wert" class="e-wert"></span></div>
         <p class="e-hinweis">Eigene Laut-Aufnahmen: Dateien wie <code>m.m4a</code> in den Ordner <code>audio/laute/</code> legen (siehe LIESMICH dort). Solange eine Aufnahme fehlt, fragt die App „Womit fängt Maus an?“.</p>
       </section>
 
       <section>
         <h3>Lernstand</h3>
-        <div class="e-reihe"><span class="e-name">Mengen</span><select id="e-stufe"></select></div>
+        <div id="e-stufen"></div>
         <pre id="e-stand"></pre>
         <div class="e-reihe"><button id="e-reset" class="e-knopf e-rot">Fortschritt löschen</button></div>
       </section>
@@ -86,16 +100,21 @@
 <!-- unsichtbar: zerlegt Strichdaten in Punkte -->
 <svg id="mess" width="0" height="0" aria-hidden="true"><path id="messpfad" d=""/></svg>
 
-<script src="mbot.js?v=0.6.0"></script>
-<script src="js/kern.js?v=0.6.0"></script>
-<script src="js/bilder.js?v=0.6.0"></script>
-<script src="inhalt/buchstaben.js?v=0.6.0"></script>
-<script src="inhalt/mengen.js?v=0.6.0"></script>
-<script src="inhalt/welt.js?v=0.6.0"></script>
-<script src="js/welt.js?v=0.6.0"></script>
-<script src="js/aufgaben/laut-finden.js?v=0.6.0"></script>
-<script src="js/aufgaben/nachspuren.js?v=0.6.0"></script>
-<script src="js/aufgaben/mengen.js?v=0.6.0"></script>
-<script src="js/app.js?v=0.6.0"></script>
+<script src="mbot.js?v=0.7.0"></script>
+<script src="js/kern.js?v=0.7.0"></script>
+<script src="js/bilder.js?v=0.7.0"></script>
+<script src="inhalt/buchstaben.js?v=0.7.0"></script>
+<script src="inhalt/mengen.js?v=0.7.0"></script>
+<script src="inhalt/silben.js?v=0.7.0"></script>
+<script src="inhalt/rechnen.js?v=0.7.0"></script>
+<script src="inhalt/welt.js?v=0.7.0"></script>
+<script src="js/welt.js?v=0.7.0"></script>
+<script src="js/aufgaben/laut-finden.js?v=0.7.0"></script>
+<script src="js/aufgaben/nachspuren.js?v=0.7.0"></script>
+<script src="js/aufgaben/mengen.js?v=0.7.0"></script>
+<script src="js/aufgaben/silben.js?v=0.7.0"></script>
+<script src="js/aufgaben/plus.js?v=0.7.0"></script>
+<script src="js/aufgaben/reihe.js?v=0.7.0"></script>
+<script src="js/app.js?v=0.7.0"></script>
 </body>
 </html>

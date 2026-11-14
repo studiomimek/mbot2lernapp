@@ -5,7 +5,10 @@
   const { $, $$ } = App;
   const B = App.bilder;
   const ZAEHLTOENE = [523, 587, 659, 698, 784, 880, 988, 1047, 1175, 1319];
-  const FUNDNAME = { muschel: "eine Muschel", seestern: "einen Seestern", perle: "eine Perle" };
+  const FUNDNAME = {
+    muschel: "eine Muschel", seestern: "einen Seestern", perle: "eine Perle",
+    stern: "einen Stern", planet: "einen Planeten", rakete: "eine kleine Rakete",
+  };
   let lauf = null;   // laufende Aufgabe
 
   /* ---------- Bühne auf den Bildschirm einpassen (feste Größe 1024 × 768) ---------- */
@@ -47,12 +50,18 @@
         $("#punkte").innerHTML = Array.from({ length: n }, (_, k) => `<i class="${k < i ? "voll" : k === i ? "jetzt" : ""}"></i>`).join("");
       },
       wiederhole(fn) { meins.wiederhole = fn; },
+      // Reaktionen: Figur auf dem Bildschirm, Klang auf dem iPad (nur ohne Roboter), echter Roboter
       zeige(text) { roverZeige(text); MBot.reaktion.zeige(text); },
       richtig() { roverStimmung("freu"); if (ohneRoboter()) App.audio.klang("richtig"); MBot.reaktion.richtig(); },
       nochmal() { roverStimmung("denk"); if (ohneRoboter()) App.audio.klang("nochmal"); MBot.reaktion.nochmal(); },
       zaehlton(n) { if (ohneRoboter()) App.audio.ton(ZAEHLTOENE[(n - 1) % ZAEHLTOENE.length], 0.14); else MBot.reaktion.zaehlton(n); },
       zaehle(n) { MBot.reaktion.zaehle(n); },
       tick() { if (ohneRoboter()) App.audio.ton(784, 0.12); },
+      silbe(i) { roverStimmung("freu"); if (ohneRoboter()) App.audio.ton(880, 0.14); MBot.reaktion.silbe(i); },
+      rakete() { roverStimmung("freu"); if (ohneRoboter()) App.audio.klang("rakete"); MBot.reaktion.rakete(); },
+      // Eingabe über den Roboter
+      roboter: () => MBot.verbunden(),
+      hand: (maxMs, weiter = () => true) => (MBot.verbunden() ? MBot.warteAufHand(maxMs, () => lebt() && weiter()) : Promise.resolve(false)),
       fertig() { beende(true); },
     };
 
@@ -65,10 +74,10 @@
     catch (e) { App.log(`Aufgabe abgebrochen: ${MBot.hilfen.errText(e)}`, "e"); beende(false); }
   };
 
-  function zurWelt() {
+  function zurWelt(bei) {
     $("#aufgabe").innerHTML = "";
     zeigeModus("welt");
-    App.welt.zeige(App.stand.ort);
+    App.welt.zeige(App.stand.ort, { bei });
     zeigeTruhenzahl();
   }
 
@@ -77,7 +86,7 @@
     if (!l) return;
     l.lebt = false; lauf = null;
     App.still();
-    if (!erfolg) { App.log("Aufgabe verlassen"); MBot.reaktion.ruhe(); zurWelt(); return; }
+    if (!erfolg) { App.log("Aufgabe verlassen"); MBot.reaktion.ruhe(); zurWelt(l.einstieg.id); return; }
 
     // Geschafft: Fundstück für die Schatzkiste
     const art = l.einstieg.fund || "muschel";
@@ -95,7 +104,7 @@
       if (zu) return;
       zu = true;
       f.classList.add("aus"); f.innerHTML = "";
-      zurWelt();
+      zurWelt(l.einstieg.id);
       const t = $("#btn-truhe");
       t.classList.remove("huepf"); void t.offsetWidth; t.classList.add("huepf");
     };
@@ -111,7 +120,7 @@
   function oeffneTruhe() {
     const n = fundAnzahl();
     const f = $("#feier");
-    const reihen = Object.entries(App.stand.fund).filter(([, z]) => z > 0).map(([art, z]) =>
+    const reihen = Object.entries(App.stand.fund).filter(([art, z]) => z > 0 && B[art]).map(([art, z]) =>
       `<div class="truhe-reihe">${Array.from({ length: Math.min(z, 10) }, () => `<span>${B[art]()}</span>`).join("")}${z > 10 ? `<b>+${z - 10}</b>` : ""}</div>`).join("");
     f.innerHTML = `<div class="truhe-blick papier"><div class="truhe-kopf">${B.truhe()}</div>${reihen || `<div class="truhe-leer"></div>`}</div>`;
     f.classList.remove("aus");
@@ -137,8 +146,8 @@
     $("#e-verbinden").disabled = an; $("#e-alle").disabled = an; $("#e-trennen").disabled = !an;
     if (an) {
       const ort = App.inhalt.welt.orte[App.stand.ort];
+      if (ort && ort.licht) MBot.reaktion.licht(...ort.licht);
       if (lauf) MBot.reaktion.zeige("?");
-      else if (ort && ort.licht) MBot.reaktion.licht(...ort.licht);
     }
   });
 
@@ -156,6 +165,12 @@
   }
 
   /* ---------- Elternbereich ---------- */
+  const STUFEN = () => [
+    ["mengenStufe", "Mengen (Fische)", App.inhalt.mengen.stufen],
+    ["plusStufe", "Plus (Sterne)", App.inhalt.rechnen.plus],
+    ["reiheStufe", "Zahlenreihe", App.inhalt.rechnen.reihe],
+  ];
+
   function fuelleStimmen() {
     const sel = $("#e-stimme");
     const liste = App.ladeStimmen();
@@ -169,14 +184,54 @@
     }
   }
 
+  // Buchstaben zum An- und Abwählen
+  function zeigeBuchstaben() {
+    const BU = App.inhalt.buchstaben;
+    const aktiv = App.buchstabenAktiv();
+    const feld = $("#e-buchstaben");
+    feld.innerHTML = "";
+    for (const b of Object.keys(BU.zeichen)) {
+      const k = document.createElement("button");
+      k.className = `e-chip${aktiv.includes(b) ? " an" : ""}${BU.zeichen[b].gross ? "" : " nur-hoeren"}`;
+      k.textContent = b.length > 1 ? b : `${b}${b.toLowerCase()}`;
+      k.addEventListener("click", () => {
+        let liste = App.buchstabenAktiv();
+        if (liste.includes(b)) {
+          if (liste.length <= 3) { $("#e-buchstaben-hinweis").textContent = "Mindestens drei Buchstaben müssen aktiv bleiben."; return; }
+          liste = liste.filter((x) => x !== b);
+        } else liste = Object.keys(BU.zeichen).filter((x) => liste.includes(x) || x === b);
+        App.stand.einst.buchstaben = liste;
+        App.speichere();
+        App.log(`Aktive Buchstaben: ${liste.join(" ")}`);
+        zeigeBuchstaben();
+      });
+      feld.appendChild(k);
+    }
+    $("#e-buchstaben-hinweis").textContent = `${aktiv.length} aktiv: ${aktiv.join(" ")}`;
+  }
+
+  function zeigeStufen() {
+    const feld = $("#e-stufen");
+    feld.innerHTML = "";
+    for (const [schluessel, name, stufen] of STUFEN()) {
+      const reihe = document.createElement("div");
+      reihe.className = "e-reihe";
+      reihe.innerHTML = `<span class="e-name">${name}</span><select>${stufen.map((s, i) =>
+        `<option value="${i}"${i === (App.stand[schluessel] | 0) ? " selected" : ""}>Stufe ${i + 1}: ${s.name}</option>`).join("")}</select>`;
+      $("select", reihe).addEventListener("change", (ev) => { App.stand[schluessel] = +ev.target.value; App.speichere(); });
+      feld.appendChild(reihe);
+    }
+  }
+
   function zeigeStand() {
     const st = App.stand;
-    const bu = App.inhalt.buchstaben.aktiv.map((b) => {
+    const bu = App.buchstabenAktiv().map((b) => {
       const e = st.buchstaben[b] || {};
       return `${b}: gehört ${e.richtig || 0}✓ ${e.fehler || 0}✗, gespurt ${e.gespurt || 0}`;
     }).join("\n");
     const za = Object.keys(st.zahlen).sort((a, b) => a - b).map((z) => `${z}: ${st.zahlen[z].richtig || 0}✓ ${st.zahlen[z].fehler || 0}✗`).join("   ");
-    $("#e-stand").textContent = `Fundstücke: ${fundAnzahl()} (Muscheln ${st.fund.muschel}, Seesterne ${st.fund.seestern}, Perlen ${st.fund.perle})\n\n${bu}\n\nZahlen: ${za || "noch nichts"}`;
+    const fund = Object.entries(st.fund).filter(([, z]) => z > 0).map(([art, z]) => `${art} ${z}`).join(", ");
+    $("#e-stand").textContent = `Fundstücke: ${fundAnzahl()}${fund ? ` (${fund})` : ""}\nEntdeckungen in der Welt: ${Object.keys(st.entdeckt).length}\n\n${bu}\n\nMengen: ${za || "noch nichts"}`;
   }
 
   function zeigeProtokoll() {
@@ -187,21 +242,23 @@
 
   function oeffneEltern() {
     const e = App.stand.einst;
+    App.welt.halt();
     $("#e-bewegung").checked = !!e.bewegung;
     $("#e-tempo").value = e.tempo; $("#e-tempo-wert").textContent = e.tempo;
     $("#e-laut").value = e.lautstaerke; $("#e-laut-wert").textContent = e.lautstaerke;
     $("#e-sprechtempo").value = e.sprechtempo; $("#e-sprechtempo-wert").textContent = e.sprechtempo;
     $("#e-status").textContent = statusText;
     $("#e-kein-bt").classList.toggle("aus", MBot.kannBluetooth());
-    const st = $("#e-stufe");
-    st.innerHTML = App.inhalt.mengen.stufen.map((s, i) => `<option value="${i}"${i === (App.stand.mengenStufe | 0) ? " selected" : ""}>Stufe ${i + 1}: ${s.name}</option>`).join("");
     fuelleStimmen();
+    zeigeBuchstaben();
+    zeigeStufen();
     zeigeStand();
     zeigeProtokoll();
     App.beiProtokoll = zeigeProtokoll;
     $("#e-reset").textContent = "Fortschritt löschen";
     $("#e-reset").dataset.sicher = "";
     $("#eltern").classList.remove("aus");
+    $(".e-inhalt").scrollTop = 0;
   }
   function schliesseEltern() {
     App.beiProtokoll = null;
@@ -226,8 +283,13 @@
     $("#e-stimme").addEventListener("change", (ev) => { e.stimme = ev.target.value; merke(); });
     $("#e-sprechtempo").addEventListener("input", (ev) => { e.sprechtempo = +ev.target.value; $("#e-sprechtempo-wert").textContent = e.sprechtempo; merke(); });
     $("#e-probe").addEventListener("click", () => { App.audio.entsperre(); App.sag("Hallo! Womit fängt Maus an?"); });
+    $("#e-probe-klang").addEventListener("click", () => { App.audio.entsperre(); App.audio.klang("feier"); });
 
-    $("#e-stufe").addEventListener("change", (ev) => { App.stand.mengenStufe = +ev.target.value; App.speichere(); });
+    $("#e-buchstaben-vorgabe").addEventListener("click", () => {
+      App.stand.einst.buchstaben = null;
+      App.speichere();
+      zeigeBuchstaben();
+    });
 
     $("#e-reset").addEventListener("click", (ev) => {
       const k = ev.currentTarget;
@@ -235,8 +297,7 @@
       App.loescheFortschritt();
       k.dataset.sicher = ""; k.textContent = "Gelöscht";
       App.log("Fortschritt gelöscht");
-      zeigeStand(); zeigeTruhenzahl();
-      $("#e-stufe").value = "0";
+      zeigeStand(); zeigeStufen(); zeigeTruhenzahl();
     });
 
     $("#e-kopieren").addEventListener("click", async () => {
@@ -250,12 +311,16 @@
       }
     });
 
-    // Öffnen: Versionsnummer unten rechts lange gedrückt halten
-    const v = $("#version");
+    // Öffnen: Zahnrad unten rechts eine Sekunde gedrückt halten (damit das Kind nicht versehentlich hineingerät)
+    const griff = $("#eltern-griff");
     let uhr = 0;
-    const ab = () => { clearTimeout(uhr); v.classList.remove("haelt"); };
-    v.addEventListener("pointerdown", () => { v.classList.add("haelt"); uhr = setTimeout(() => { ab(); oeffneEltern(); }, 1000); });
-    for (const n of ["pointerup", "pointerleave", "pointercancel"]) v.addEventListener(n, ab);
+    const ab = () => { clearTimeout(uhr); griff.classList.remove("haelt"); };
+    griff.addEventListener("pointerdown", (ev) => {
+      ev.stopPropagation();
+      griff.classList.add("haelt");
+      uhr = setTimeout(() => { ab(); oeffneEltern(); }, 1000);
+    });
+    for (const n of ["pointerup", "pointerleave", "pointercancel"]) griff.addEventListener(n, ab);
   }
 
   /* ---------- Start ---------- */
@@ -264,7 +329,7 @@
     App.ladeStimmen();
     $("#start").classList.add("aus");
     zeigeModus("welt");
-    App.welt.zeige(App.stand.ort, { ansage: "Hallo! Tippe an, wohin du möchtest." });
+    App.welt.zeige(App.stand.ort, { ansage: "Hallo! Zeig mit dem Finger, wohin ich fahren soll." });
     zeigeTruhenzahl();
   }
 
@@ -281,6 +346,7 @@
     $("#btn-zurueck").innerHTML = B.zurueck();
     $("#btn-nochmal").innerHTML = B.lautsprecher();
     $("#btn-robo").insertAdjacentHTML("afterbegin", B.rover());
+    $("#eltern-zahnrad").innerHTML = B.zahnrad();
     $("#version").textContent = `v${App.VERSION}`;
     $$(".e-version").forEach((el) => { el.textContent = `App v${App.VERSION} · mbot.js v${MBot.VERSION}`; });
 
@@ -290,6 +356,8 @@
     $("#btn-nochmal").addEventListener("click", () => { if (lauf && lauf.wiederhole) lauf.wiederhole(); });
     $("#btn-robo").addEventListener("click", roboterKnopf);
     $("#btn-stopp").addEventListener("click", () => { MBot.stopp().catch(() => {}); });
+    // Knöpfe am Rand sollen die Spielfigur nicht losschicken
+    for (const id of ["btn-truhe", "btn-robo", "btn-stopp"]) $(`#${id}`).addEventListener("pointerdown", (ev) => ev.stopPropagation());
 
     uebernimmEinstellungen();
     richteElternEin();

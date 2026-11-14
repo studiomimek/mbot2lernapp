@@ -77,7 +77,7 @@
 </head>
 <body>
 <header>
-  <h1>mBot2 Testkonsole <small>v0.6.0 · <a href="../index.html" style="color:inherit">zur App</a></small></h1>
+  <h1>mBot2 Testkonsole <small>v0.7.0 · <a href="../index.html" style="color:inherit">zur App</a></small></h1>
   <span id="status" class="status">Nicht verbunden</span>
 </header>
 
@@ -183,6 +183,9 @@
       <button data-need data-act="neugierig">Neugierig</button>
       <button data-need data-act="zaehle">Zähle 5</button>
       <button data-need data-act="tanz">Feier</button>
+      <button data-need data-act="staunen">Staunen</button>
+      <button data-need data-act="silbe">Silbe</button>
+      <button data-need data-act="rakete">Raketenstart</button>
     </div>
   </section>
 
@@ -225,6 +228,18 @@
   </section>
 
   <section class="wide">
+    <h2><span class="num">10</span>Experimente für spätere Spiele</h2>
+    <p class="hint">Probiert neue Roboter-Funktionen aus. Im Protokoll steht, welcher Befehl eine Antwort bekommt. Bitte danach das Protokoll kopieren und weitergeben.</p>
+    <div class="row">
+      <button data-need id="btnExpTasten">Tasten und Joystick</button>
+      <button data-need id="btnExpLaut">Mikrofon (klatschen)</button>
+      <button data-need id="btnExpLage">Schütteln und Neigen</button>
+      <button data-need id="btnExpZirp">Zwitschern in einem Befehl</button>
+      <button data-need id="btnExpHand">Hand vor den Sensor (10 s)</button>
+    </div>
+  </section>
+
+  <section class="wide">
     <h2>Protokoll</h2>
     <p class="hint">Bei Problemen: „Protokoll kopieren“ und den Text weitergeben.</p>
     <pre id="log"></pre>
@@ -236,7 +251,7 @@
   </section>
 </main>
 
-<script src="../mbot.js?v=0.6.0"></script>
+<script src="../mbot.js?v=0.7.0"></script>
 <script>
 "use strict";
 
@@ -327,6 +342,7 @@ async function spin() {
 
 const reakt = (name, ...args) => { syncSettings(); return MBot.reaktion[name](...args); };
 
+let silbenNr = 0;
 const actions = {
   green: () => run("cyberpi.led.on(0,255,0)"),
   red: () => run("cyberpi.led.on(255,0,0)"),
@@ -349,6 +365,9 @@ const actions = {
   falsch: () => reakt("nochmal"),
   zaehle: () => reakt("zaehle", 5),
   tanz: () => reakt("feier"),
+  staunen: () => reakt("staunen"),
+  silbe: () => reakt("silbe", silbenNr++),
+  rakete: () => reakt("rakete"),
 };
 
 function bindAction(el, fn) {
@@ -522,6 +541,29 @@ async function answer(btn, letter) {
 $("btnRound").addEventListener("click", newRound);
 $("btnRepeat").addEventListener("click", askQuestion);
 
+/* ---------- Experimente: Welche Eingaben kann der Roboter liefern? ---------- */
+bindAction($("btnExpTasten"), async () => {
+  log("Experiment Tasten: währenddessen Taste A, B oder den Joystick am Roboter gedrückt halten", "s");
+  for (const k of ["a", "b", "up", "down", "left", "right", "middle"]) await tryStep(`cyberpi.controller.is_press('${k}')`);
+});
+bindAction($("btnExpLaut"), async () => {
+  log("Experiment Mikrofon: 6 Messungen, dabei in die Hände klatschen", "s");
+  for (let i = 0; i < 6; i++) { await tryStep("cyberpi.get_loudness()"); await sleep(250); }
+});
+bindAction($("btnExpLage"), async () => {
+  log("Experiment Lage: Roboter dabei schütteln oder kippen", "s");
+  for (const c of ["cyberpi.is_shake()", "cyberpi.get_shakeval()", "cyberpi.is_tiltleft()", "cyberpi.get_pitch()", "cyberpi.get_roll()"]) await tryStep(c);
+});
+bindAction($("btnExpZirp"), async () => {
+  log("Experiment: vier Töne in einem einzigen Befehl (klingt flüssiger, falls es geht)", "s");
+  await tryStep("(cyberpi.audio.play_tone(1568,0.05),cyberpi.audio.play_tone(2093,0.05),cyberpi.audio.play_tone(1319,0.04),cyberpi.audio.play_tone(2637,0.1))");
+});
+bindAction($("btnExpHand"), async () => {
+  log("Experiment: Hand vor die Sensor-Augen halten …", "s");
+  const ok = await MBot.warteAufHand(10000);
+  log(ok ? "Hand erkannt." : "Keine Hand erkannt.", ok ? "r" : "w");
+});
+
 /* ---------- Protokoll-Werkzeuge ---------- */
 $("btnClearLog").addEventListener("click", () => { logEl.innerHTML = ""; });
 $("btnCopy").addEventListener("click", async () => {
@@ -543,7 +585,7 @@ function showNoBluetooth() {
 }
 
 (function init() {
-  log(`Testkonsole v0.6.0 gestartet (mbot.js ${MBot.VERSION})`);
+  log(`Testkonsole v0.7.0 gestartet (mbot.js ${MBot.VERSION})`);
   log(`Browser: ${navigator.userAgent}`);
   log(`Sichere Verbindung (HTTPS/Datei): ${window.isSecureContext ? "ja" : "NEIN – Bluetooth braucht HTTPS"}`, window.isSecureContext ? "" : "e");
   log(`Web Bluetooth: ${navigator.bluetooth ? "vorhanden" : "fehlt"}`, navigator.bluetooth ? "" : "e");

@@ -116,6 +116,9 @@
     ohr: svg("0 0 100 100", teil.muschel()),
     spur: svg("0 0 100 100", `<path d="M18 70 C28 30 44 30 50 52 C56 74 72 72 82 34" stroke="${F.meer}" stroke-width="12" fill="none" stroke-linecap="round"/><circle cx="18" cy="70" r="10" fill="${F.koralle}"/>`),
     kiesel: svg("0 0 100 100", `<ellipse cx="32" cy="66" rx="22" ry="17" fill="#8fa3ad"/><ellipse cx="68" cy="68" rx="20" ry="15" fill="#6f8792"/><ellipse cx="52" cy="38" rx="20" ry="16" fill="#aab9c0"/>`),
+    bogen: svg("0 0 100 100", `<path d="M10 40 Q30 72 50 40 M50 40 Q70 72 90 40" stroke="${F.koralle}" stroke-width="10" fill="none" stroke-linecap="round"/>`),
+    plus: svg("0 0 100 100", `<path d="M50 18 V82 M18 50 H82" stroke="${F.tinte}" stroke-width="15" stroke-linecap="round"/>`),
+    zahlen: svg("0 0 100 100", `<text x="50" y="67" text-anchor="middle" font-family="-apple-system, 'Segoe UI', sans-serif" font-size="46" font-weight="700" fill="${F.tinte}">123</text>`),
   }[name] || "");
 
   B.pfeil = (richtung) => {
@@ -208,4 +211,84 @@
     <g class="tang" stroke="${F.blatt2}" stroke-width="14" stroke-linecap="round" fill="none">
       <path d="M980 720 Q998 664 980 610 Q964 566 982 524"/><path d="M944 724 Q932 680 946 642"/>
     </g>`);
+  /* ---------- Raketenstation ---------- */
+  const N = { nacht: "#27365f", nacht2: "#33457a", boden: "#8f95ad", boden2: "#a6abc0", bau: "#dfe2ec", stahl: "#c8ccd9", platz: "#6f7590" };
+  const sterne = (liste) => `<g class="sterne" fill="${F.papier}">${liste.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join("")}</g>`;
+  const zacken = (cx, cy, aussen, innen) => {
+    const pts = [];
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? innen : aussen, w = -Math.PI / 2 + i * Math.PI / 5;
+      pts.push(`${(cx + r * Math.cos(w)).toFixed(1)},${(cy + r * Math.sin(w)).toFixed(1)}`);
+    }
+    return pts.join(" ");
+  };
+
+  // stehende Rakete, 100 breit und 200 hoch
+  teil.rakete = () => `
+    <path d="M22 150 L2 196 H22Z M78 150 L98 196 H78Z" fill="${F.koralle}"/>
+    <path d="M22 186 V84 Q22 36 50 4 Q78 36 78 84 V186Z" fill="${F.papier}"/>
+    <path d="M30 60 Q36 30 50 4 Q64 30 70 60Z" fill="${F.koralle}"/>
+    <circle cx="50" cy="92" r="15" fill="${F.tinte}"/><circle cx="50" cy="92" r="10" fill="${F.meer2}"/>
+    <rect x="22" y="136" width="56" height="12" fill="${F.koralle}"/>
+    <rect x="34" y="186" width="32" height="10" fill="${F.tinte}"/>`;
+  // Stern in der Farbe aus CSS „color“
+  teil.stern = () => `<polygon points="${zacken(50, 53, 40, 18)}" fill="currentColor" stroke="currentColor" stroke-width="9" stroke-linejoin="round"/>`;
+
+  B.sternchen = () => svg("0 0 100 100", teil.stern());
+  // Fundstücke der Raketenstation
+  B.stern = () => svg("0 0 100 100", `<g style="color:${F.sonne}">${teil.stern()}</g><circle cx="40" cy="50" r="4" fill="${F.tinte}"/><circle cx="60" cy="50" r="4" fill="${F.tinte}"/><path d="M41 62 Q50 70 59 62" stroke="${F.tinte}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`);
+  B.planet = () => svg("0 0 100 100", `
+    <circle cx="50" cy="50" r="30" fill="#7fc8a9"/><path d="M26 40 Q50 28 74 40 Q50 46 26 40Z" fill="#5fae8d"/><path d="M24 58 Q50 70 76 58 Q50 62 24 58Z" fill="#5fae8d"/>
+    <ellipse cx="50" cy="52" rx="46" ry="11" fill="none" stroke="#f59a3c" stroke-width="7" transform="rotate(-16 50 52)"/>`);
+  B.rakete = () => svg("-50 0 200 200", teil.rakete());
+
+  B.station = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${N.nacht}"/>
+    ${sterne([[60, 60, 3], [140, 230, 2], [262, 84, 2.5], [330, 190, 2], [420, 50, 3], [690, 96, 2], [752, 190, 3], [800, 56, 2], [900, 140, 2.5], [980, 240, 2], [90, 300, 2], [960, 60, 3], [300, 290, 2], [730, 300, 2]])}
+    <circle cx="172" cy="132" r="60" fill="#fff3c9"/><circle cx="150" cy="116" r="13" fill="#ecdca6"/><circle cx="190" cy="154" r="9" fill="#ecdca6"/><circle cx="196" cy="106" r="6" fill="#ecdca6"/>
+    <path d="M0 372 Q170 318 340 356 T680 340 T1024 352 V768 H0Z" fill="${N.nacht2}"/>
+    <path d="M70 456 V392 Q70 330 160 330 Q250 330 250 392 V456Z" fill="${N.bau}"/>
+    <rect x="96" y="382" width="34" height="26" rx="5" fill="${F.sonne}"/><rect x="143" y="382" width="34" height="26" rx="5" fill="${F.sonne}"/><rect x="190" y="382" width="34" height="26" rx="5" fill="${F.sonne}"/>
+    <rect x="156" y="298" width="8" height="36" fill="${N.stahl}"/><circle cx="160" cy="294" r="8" fill="${F.koralle}"/>
+    <rect x="876" y="340" width="12" height="116" fill="${N.stahl}"/>
+    <g transform="rotate(-32 882 332)"><path d="M822 332 Q882 392 942 332Z" fill="${N.bau}"/><rect x="879" y="296" width="6" height="40" fill="${N.stahl}"/><circle cx="882" cy="294" r="7" fill="${F.koralle}"/></g>
+    <path d="M0 448 Q200 424 420 442 T820 434 T1024 446 V768 H0Z" fill="${N.boden}"/>
+    <path d="M0 492 Q220 470 440 486 T840 478 T1024 488 V768 H0Z" fill="${N.boden2}"/>
+    <ellipse cx="560" cy="462" rx="160" ry="22" fill="${N.platz}"/>
+    <rect x="444" y="150" width="22" height="312" fill="${N.stahl}"/>
+    <path d="M444 190 L466 230 M466 190 L444 230 M444 270 L466 310 M466 270 L444 310 M444 350 L466 390 M466 350 L444 390" stroke="${N.platz}" stroke-width="4"/>
+    <rect x="466" y="250" width="48" height="10" fill="${N.stahl}"/>
+    <g transform="translate(470 100) scale(1.8)">${teil.rakete()}</g>
+    <g fill="${N.boden}"><ellipse cx="170" cy="700" rx="48" ry="10"/><ellipse cx="700" cy="712" rx="60" ry="11"/><ellipse cx="936" cy="668" rx="34" ry="8"/></g>`);
+
+  B.stationNah = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${N.nacht}"/>
+    ${sterne([[40, 130, 3], [120, 330, 2], [960, 150, 2.5], [1000, 360, 2], [230, 108, 2], [770, 100, 2], [60, 520, 2], [984, 540, 3], [520, 96, 2]])}
+    <path d="M0 716 Q200 694 400 710 T800 706 T1024 700 V768 H0Z" fill="${N.boden}"/>
+    <path d="M0 742 Q220 726 440 738 T840 734 T1024 740 V768 H0Z" fill="${N.boden2}"/>`);
+
+  B.figurSilben = () => svg("0 0 200 176", `
+    <g transform="translate(62 0) scale(.76)">${teil.rakete()}</g>
+    <path d="M26 158 Q50 176 74 158 M76 158 Q100 176 124 158 M126 158 Q150 176 174 158" stroke="${F.sonne}" stroke-width="7" fill="none" stroke-linecap="round"/>`);
+
+  B.figurPlus = () => svg("0 0 200 160", `
+    <g style="color:${F.sonne}" transform="translate(28 0) scale(.62)">${teil.stern()}</g>
+    <g style="color:${F.koralle}" transform="translate(110 4) scale(.62)">${teil.stern()}</g>
+    <g style="color:${F.sonne}" transform="translate(70 26) scale(.62)">${teil.stern()}</g>
+    <rect x="30" y="72" width="140" height="82" rx="10" fill="${F.holz}"/>
+    <path d="M30 100 H170 M30 128 H170" stroke="${F.holz2}" stroke-width="5"/>
+    <path d="M100 92 V136 M78 114 H122" stroke="${F.papier}" stroke-width="11" stroke-linecap="round"/>`);
+
+  B.figurReihe = () => svg("0 0 210 160", `
+    <rect x="40" y="96" width="12" height="60" fill="${N.stahl}"/><rect x="158" y="96" width="12" height="60" fill="${N.stahl}"/>
+    <rect x="8" y="12" width="194" height="100" rx="18" fill="${F.papier}"/>
+    <text x="105" y="84" text-anchor="middle" font-family="Grundschrift, sans-serif" font-size="56" fill="${F.tinte}">3 2 1</text>`);
+
+  // Entdeckungen
+  B.kokosnuss = () => svg("0 0 100 100", `<circle cx="50" cy="52" r="40" fill="${F.holz}"/><path d="M18 40 Q50 22 82 40 Q50 34 18 40Z" fill="${F.holz2}"/><circle cx="40" cy="50" r="5" fill="${F.holz2}"/><circle cx="60" cy="50" r="5" fill="${F.holz2}"/><circle cx="50" cy="64" r="5" fill="${F.holz2}"/>`);
+  B.funk = () => svg("0 0 100 100", `<g stroke="${F.sonne}" stroke-width="8" fill="none" stroke-linecap="round"><path d="M34 62 Q50 46 66 62"/><path d="M22 48 Q50 20 78 48"/><path d="M10 34 Q50 -6 90 34"/></g><circle cx="50" cy="78" r="9" fill="${F.sonne}"/>`);
+
+  B.zahnrad = () => svg("0 0 100 100", `
+    <circle cx="50" cy="50" r="31" fill="none" stroke="${F.tinte}" stroke-width="18" stroke-dasharray="12.2 12.15"/>
+    <circle cx="50" cy="50" r="27" fill="${F.tinte}"/><circle cx="50" cy="50" r="11" fill="${F.papier}"/>`);
 })();

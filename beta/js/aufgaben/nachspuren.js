@@ -14,12 +14,13 @@
   const B = App.bilder;
 
   const W = 520, H = 600;          // Zeichenfläche in Bühnen-Pixeln
-  const MASS = 4.2, OBEN = 100;    // Pixel pro Einheit der Strichdaten; y der Oberlinie
+  const MASS = 3.7, OBEN = 64;     // Pixel pro Einheit der Strichdaten; y der Oberlinie (Platz für Unterlängen)
   const SCHRITT = 8;               // Abstand der Prüfpunkte in Pixeln
   const TOL = 40;                  // so weit darf der Finger neben der Spur liegen
   const START_TOL = 54;            // so nah am Startpunkt muss der Finger aufsetzen
   const VORAUS = 6;                // so viele Prüfpunkte darf der Finger vorauseilen (auch: so früh darf er umkehren)
   const ENDE_NAH = 3;              // so viele Prüfpunkte vor dem Ende gilt der Strich als geschafft
+  const ECKE_VORAUS = 14, ECKE_TOL = 26;   // Abkürzen an spitzen Ecken: so weit voraus, so dicht an der Spur
   const DEMO_TEMPO = 300;          // Pixel pro Sekunde beim Vormachen
   const RILLE = "#cfa962", WASSER = "#2f9fb5", TINTE = "#23324a", KORALLE = "#f0715b";
   const LOB = ["Toll geschrieben!", "Super gemacht!", "Sehr schön!", "Prima!"];
@@ -45,7 +46,7 @@
 
     start(feld, ctx) {
       const BU = App.inhalt.buchstaben;
-      const alle = (ctx.einstieg.inhalt.buchstaben || BU.aktiv).filter((b) => BU.zeichen[b]);
+      const alle = App.buchstabenAktiv().filter((b) => BU.zeichen[b].gross);
       const glyphen = plane(alle, ctx.einstieg.inhalt.runden || 4);
 
       feld.innerHTML = `
@@ -182,14 +183,14 @@
                 if (meins.strich >= striche.length - 1) { male(); setTimeout(schluss, 450); return; }
                 male();
                 meins.strich++; meins.idx = 0; rest = 0; pause = 350;
-                requestAnimationFrame(schritt);
+                App.naechstesBild(schritt);
                 return;
               }
             }
             male();
-            requestAnimationFrame(schritt);
+            App.naechstesBild(schritt);
           }
-          requestAnimationFrame(schritt);
+          App.naechstesBild(schritt);
         });
       }
 
@@ -210,7 +211,16 @@
             // Punkt des Rückwegs genau auf dem aktuellen Punkt; sonst bliebe die Spur dort hängen.
             if (d < bd || (bester < 0 && d <= bd)) { bd = d; bester = i; }
           }
-          if (bester < 0) break;
+          if (bester < 0) {
+            // Zweite Chance an spitzen Ecken (z. B. beim N): Liegt der Finger schon deutlich weiter vorn
+            // dicht auf der Spur, darf er die Ecke abkürzen.
+            let nd = Math.min(ECKE_TOL, abstand(q, p[fortschritt]));
+            for (let i = fortschritt + VORAUS + 1; i <= Math.min(fortschritt + ECKE_VORAUS, p.length - 1); i++) {
+              const d = abstand(q, p[i]);
+              if (d < nd) { nd = d; bester = i; }
+            }
+            if (bester < 0) break;
+          }
           fortschritt = bester;
         }
         if (fortschritt >= p.length - 1 - ENDE_NAH) strichFertig();

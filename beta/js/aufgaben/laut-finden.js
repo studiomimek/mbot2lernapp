@@ -30,7 +30,7 @@
 
     start(feld, ctx) {
       const BU = App.inhalt.buchstaben;
-      const alle = (ctx.einstieg.inhalt.buchstaben || BU.aktiv).filter((b) => BU.zeichen[b]);
+      const alle = App.buchstabenAktiv();
       const runden = ctx.einstieg.inhalt.runden || 5;
       const ziele = plane(alle, runden);
       let runde = 0, ziel = "", wort = "", fehler = 0, gesperrt = true, mitAufnahme = false;
@@ -66,14 +66,18 @@
         $(".lf-bild", feld).textContent = mitAufnahme ? "" : bild;
         frageKnopf.classList.toggle("nur-ton", mitAufnahme);
 
-        const auswahl = App.misch([ziel, ...App.misch(alle.filter((b) => b !== ziel)).slice(0, 2)]);
+        // Keine Auswahl mit gleichem ersten Buchstaben (sonst wäre bei „Eis“ sowohl Ei als auch E richtig)
+        let andere = alle.filter((b) => b[0] !== ziel[0]);
+        if (andere.length < 2) andere = alle.filter((b) => b !== ziel);
+        const auswahl = App.misch([ziel, ...App.misch(andere).slice(0, 2)]);
         reihe.innerHTML = "";
         auswahl.forEach((b, i) => {
           const k = document.createElement("button");
           k.className = "lf-krebs kommt";
           k.style.animationDelay = `${i * 90}ms`;
           k.setAttribute("aria-label", b);
-          k.innerHTML = `<span class="lf-karte papier">${b}<small>${b.toLowerCase()}</small></span>${B.krebs(KREBSFARBEN[i % KREBSFARBEN.length])}`;
+          const schrift = b.length > 1 ? b : `${b}<small>${b.toLowerCase()}</small>`;
+          k.innerHTML = `<span class="lf-karte papier">${schrift}</span>${B.krebs(KREBSFARBEN[i % KREBSFARBEN.length])}`;
           k.addEventListener("click", () => antwort(k, b));
           reihe.appendChild(k);
         });

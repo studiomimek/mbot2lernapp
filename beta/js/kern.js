@@ -1,7 +1,7 @@
 /* kern.js – Grundgerüst der App: Namensraum, Protokoll, Speicher, Sprache, Töne, Aufnahmen */
 "use strict";
 
-const App = { VERSION: "0.6.0", inhalt: {}, aufgaben: {}, bilder: {} };
+const App = { VERSION: "0.7.0", inhalt: {}, aufgaben: {}, bilder: {} };
 
 (() => {
   /* ---------- Kleine Hilfen ---------- */
@@ -13,6 +13,15 @@ const App = { VERSION: "0.6.0", inhalt: {}, aufgaben: {}, bilder: {} };
     const a = liste.slice();
     for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
     return a;
+  };
+
+  // Nächster Animationsschritt. Liefert der Browser gerade keine Bilder (Energiesparen, Seite im Hintergrund),
+  // sorgt ein Zeitgeber dafür, dass es trotzdem weitergeht.
+  App.naechstesBild = (fn) => {
+    let erledigt = false;
+    const los = () => { if (!erledigt) { erledigt = true; fn(performance.now()); } };
+    requestAnimationFrame(los);
+    setTimeout(los, 60);
   };
 
   /* ---------- Protokoll (im Elternbereich sichtbar und kopierbar) ---------- */
@@ -32,11 +41,13 @@ const App = { VERSION: "0.6.0", inhalt: {}, aufgaben: {}, bilder: {} };
   const SCHLUESSEL = "mbot2-lernapp-stand-v1";
   const standard = () => ({
     ort: null,                                    // zuletzt besuchter Ort
-    fund: { muschel: 0, seestern: 0, perle: 0 },  // Fundstücke in der Schatzkiste
+    fund: { muschel: 0, seestern: 0, perle: 0, stern: 0, planet: 0, rakete: 0 },   // Fundstücke in der Schatzkiste
+    entdeckt: {},                                 // gefundene Entdeckungen in der Welt
     buchstaben: {},                               // "M": { richtig, fehler, gespurt }
     zahlen: {},                                   // "7": { richtig, fehler }
-    mengenStufe: 0,
-    einst: { bewegung: true, tempo: 50, lautstaerke: 60, stimme: "", sprechtempo: 0.85 },
+    mengenStufe: 0, plusStufe: 0, reiheStufe: 0,
+    // buchstaben: null = Vorgabe aus inhalt/buchstaben.js, sonst die im Elternbereich gewählte Liste
+    einst: { bewegung: true, tempo: 50, lautstaerke: 60, stimme: "", sprechtempo: 0.85, buchstaben: null },
   });
   function lade() {
     const s = standard();
@@ -59,6 +70,13 @@ const App = { VERSION: "0.6.0", inhalt: {}, aufgaben: {}, bilder: {} };
     App.stand.einst = einst;
     App.speichere();
   };
+  // Buchstaben, die gerade geübt werden (mindestens drei, sonst gilt die Vorgabe)
+  App.buchstabenAktiv = () => {
+    const BU = App.inhalt.buchstaben;
+    const liste = (App.stand.einst.buchstaben || BU.aktiv).filter((b) => BU.zeichen[b]);
+    return liste.length >= 3 ? liste : BU.aktiv.slice();
+  };
+
   // Zähler für einen Buchstaben oder eine Zahl
   App.merke = (bereich, schluessel, feld) => {
     const b = App.stand[bereich];
@@ -104,13 +122,35 @@ const App = { VERSION: "0.6.0", inhalt: {}, aufgaben: {}, bilder: {} };
 
   /* ---------- Töne auf dem iPad (Web Audio) ---------- */
   let ac = null;
+  // Zwitscher-Klänge wie bei einem kleinen Filmroboter: kurze Pfiffe, die in der Tonhöhe gleiten
+  // Jeder Eintrag: [von Hz, bis Hz, Dauer in s]
   const KLAENGE = {
-    tipp: [[880, 0.06]],
-    strich: [[660, 0.09], [880, 0.14]],
-    richtig: [[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.3]],
-    nochmal: [[392, 0.15], [330, 0.3]],
-    feier: [[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.1], [784, 0.1], [1047, 0.35]],
+    tipp: [[1400, 2100, 0.05]],
+    strich: [[1200, 1900, 0.05], [2000, 2700, 0.07]],
+    neugierig: [[900, 1500, 0.07], [1600, 1100, 0.05], [1300, 2500, 0.13]],
+    staunen: [[1500, 2600, 0.08], [2600, 1800, 0.05], [2000, 3100, 0.12]],
+    richtig: [[1300, 2200, 0.06], [2400, 1700, 0.05], [1900, 2900, 0.06], [1500, 2300, 0.05], [2600, 3300, 0.14]],
+    nochmal: [[720, 540, 0.14], [500, 300, 0.26]],
+    feier: [[1200, 2000, 0.06], [2200, 1500, 0.05], [1700, 2700, 0.06], [2900, 2100, 0.05], [1400, 2400, 0.06],
+            [2500, 1800, 0.05], [2000, 3000, 0.07], [1600, 2600, 0.06], [1200, 3400, 0.32]],
+    rakete: [[260, 520, 0.25], [520, 1100, 0.3], [1100, 2600, 0.5]],
   };
+  function zirp(von, bis, dauer, ab, laut = 0.13) {
+    if (!ac) return;
+    try {
+      const t = ac.currentTime + ab;
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(von, t);
+      o.frequency.exponentialRampToValueAtTime(bis, t + dauer);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(laut, t + 0.008);
+      g.gain.setValueAtTime(laut, t + Math.max(0.01, dauer - 0.015));
+      g.gain.linearRampToValueAtTime(0.0001, t + dauer);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t + dauer + 0.03);
+    } catch (_) {}
+  }
   App.audio = {
     // Muss aus einer Berührung heraus aufgerufen werden (iOS gibt Ton und Sprache sonst nicht frei)
     entsperre() {
@@ -138,7 +178,7 @@ const App = { VERSION: "0.6.0", inhalt: {}, aufgaben: {}, bilder: {} };
     },
     klang(name) {
       let t = 0;
-      for (const [f, d] of KLAENGE[name] || []) { App.audio.ton(f, d + 0.06, t); t += d; }
+      for (const [von, bis, d] of KLAENGE[name] || []) { zirp(von, bis, d, t); t += d + 0.025; }
     },
   };
 
