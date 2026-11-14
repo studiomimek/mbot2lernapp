@@ -104,7 +104,7 @@ button svg, .rover svg, .abzeichen svg, .schloss svg { display: block; width: 10
   border: 5px solid rgba(255, 255, 255, .85); background: rgba(255, 255, 255, .3);
 }
 /* Unter Wasser fährt die Figur in einer Luftblase */
-.ort-riff #welt-rover::after {
+.ort-riff #welt-rover::after, .ort-wrack #welt-rover::after {
   content: ""; position: absolute; left: -14%; top: -24%; width: 128%; padding-bottom: 128%; border-radius: 50%;
   border: 5px solid rgba(255, 255, 255, .6); background: rgba(255, 255, 255, .14);
 }
@@ -372,3 +372,62 @@ button svg, .rover svg, .abzeichen svg, .schloss svg { display: block; width: 10
   position: absolute; left: 432px; top: 372px; width: 160px; height: 160px; border-radius: 50%; line-height: 1;
   background: var(--koralle); box-shadow: 0 8px 0 #b94a38; font-size: 84px; animation: pulsknopf 1s ease-in-out infinite;
 }
+
+/* ---------- v0.8: Spiel Roboter steuern ---------- */
+.st-bahn { position: absolute; left: 262px; top: 108px; width: 500px; height: 150px; border-radius: 36px; background: rgba(255, 248, 234, .45); }
+.st-figur { position: absolute; left: 190px; top: 22px; width: 120px; transition: transform .12s; }
+.st-figur.disco { animation: nick .3s infinite; }
+.st-figur.kreisel { animation: drehen .5s linear 3; }
+.st-knueppel {
+  position: absolute; left: 70px; top: 292px; width: 300px; height: 300px; border-radius: 50%; touch-action: none;
+  background: rgba(35, 50, 74, .16); box-shadow: inset 0 0 0 14px rgba(35, 50, 74, .1), inset 0 8px 0 rgba(35, 50, 74, .12);
+}
+.st-knauf {
+  position: absolute; left: 88px; top: 88px; width: 124px; height: 124px; border-radius: 50%; pointer-events: none;
+  background: var(--papier); box-shadow: 0 8px 0 rgba(35, 50, 74, .25), inset 0 0 0 12px #e9dfc8; transition: transform .07s;
+}
+.st-knoepfe { position: absolute; left: 404px; top: 296px; width: 600px; display: flex; flex-wrap: wrap; justify-content: center; gap: 24px 22px; }
+.st-rund, .st-gross { border-radius: 50%; line-height: 1; box-shadow: 0 7px 0 rgba(35, 50, 74, .28); }
+.st-rund { width: 112px; height: 112px; font-size: 56px; margin: 0 8px; }
+.st-gross { width: 128px; height: 128px; font-size: 60px; background: var(--papier); }
+.st-rund:active, .st-gross:active { transform: translateY(5px); box-shadow: 0 2px 0 rgba(35, 50, 74, .28); }
+.st-mikro.laeuft { background: var(--rot); animation: pulsknopf .7s ease-in-out infinite; }
+
+/* ---------- v0.8: Aufgaben mit Bildkarten (Anlaut-Bilder, Lesen) ---------- */
+.ab-vorbild {
+  position: absolute; left: 382px; top: 92px; width: 260px; height: 184px; border-radius: 36px;
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+}
+.ab-emoji { font-size: 96px; line-height: 1; }
+.ab-buchstabe { font: 400 84px/1 "Grundschrift", "Segoe Print", cursive; color: var(--koralle); }
+.ab-karten { position: absolute; left: 0; top: 330px; width: 1024px; display: flex; justify-content: center; gap: 26px; }
+.ab-karte { width: 190px; height: 190px; border-radius: 36px; font-size: 104px; line-height: 178px; border: 6px solid transparent; transition: transform .15s; }
+.ab-karte.kommt { animation: reinkommen .4s backwards; }
+.ab-karte.spricht { transform: scale(1.12); border-color: var(--sonne); }
+.ab-karte.richtig { background: #c9efc4; border-color: #1d9a54; }
+.ab-karte.falsch { opacity: .35; animation: wackel .45s; }
+.ls-wort {
+  position: absolute; left: 192px; top: 96px; width: 640px; height: 200px; border-radius: 36px;
+  display: flex; align-items: center; justify-content: center;
+  font: 400 96px/1.2 "Grundschrift", "Segoe Print", cursive; color: var(--tinte);
+}
+.ls-wort .sb-silbe { opacity: 1; border-bottom-color: rgba(35, 50, 74, .22); padding: 0 3px 12px; margin: 0 1px; }
+.ls-wort .sb-silbe.an { border-bottom-color: var(--koralle); color: var(--koralle); }
+.ls-karten { top: 350px; }
+
+/* ---------- v0.8: Aufgabe Vergleichen ---------- */
+.vg-haufen {
+  position: absolute; top: 118px; width: 360px; height: 330px; padding: 20px 14px; border-radius: 36px;
+  background: rgba(255, 248, 234, .1); border: 5px solid rgba(255, 248, 234, .4);
+}
+.vg-haufen[data-seite="links"] { left: 100px; }
+.vg-haufen[data-seite="rechts"] { left: 564px; }
+.vg-haufen.kommt { animation: einblenden .35s; }
+.vg-haufen.richtig { border-color: #8fdc9a; background: rgba(143, 220, 154, .25); }
+.vg-haufen.falsch { opacity: .4; animation: wackel .45s; }
+.vg-muenzen { display: grid; grid-template-columns: repeat(5, 58px); gap: 8px 6px; justify-content: center; align-content: start; height: 190px; }
+.vg-muenzen i { display: block; width: 58px; height: 58px; }
+.vg-muenzen svg { display: block; width: 100%; height: 100%; }
+.vg-zahl { position: absolute; left: 0; bottom: 12px; width: 100%; text-align: center; font: 400 64px/1 "Grundschrift", "Segoe Print", cursive; color: var(--papier); }
+.vg-zeichen { position: absolute; left: 472px; top: 236px; width: 80px; height: 92px; border-radius: 22px; text-align: center; font: 700 58px/92px -apple-system, "Segoe UI", sans-serif; color: var(--tinte); }
+.vg-zeichen.gefuellt { background: #c9efc4; }

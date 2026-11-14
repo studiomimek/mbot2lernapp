@@ -1,7 +1,7 @@
 /* kern.js – Grundgerüst der App: Namensraum, Protokoll, Speicher, Sprache, Töne, Aufnahmen */
 "use strict";
 
-const App = { VERSION: "0.7.0", inhalt: {}, aufgaben: {}, bilder: {} };
+const App = { VERSION: "0.8.0", inhalt: {}, aufgaben: {}, bilder: {} };
 
 (() => {
   /* ---------- Kleine Hilfen ---------- */
@@ -41,13 +41,14 @@ const App = { VERSION: "0.7.0", inhalt: {}, aufgaben: {}, bilder: {} };
   const SCHLUESSEL = "mbot2-lernapp-stand-v1";
   const standard = () => ({
     ort: null,                                    // zuletzt besuchter Ort
-    fund: { muschel: 0, seestern: 0, perle: 0, stern: 0, planet: 0, rakete: 0 },   // Fundstücke in der Schatzkiste
+    fund: { muschel: 0, seestern: 0, perle: 0, stern: 0, planet: 0, rakete: 0, feder: 0, flasche: 0, muenze: 0 },   // Fundstücke in der Schatzkiste
     entdeckt: {},                                 // gefundene Entdeckungen in der Welt
     buchstaben: {},                               // "M": { richtig, fehler, gespurt }
     zahlen: {},                                   // "7": { richtig, fehler }
-    mengenStufe: 0, plusStufe: 0, reiheStufe: 0,
+    mengenStufe: 0, plusStufe: 0, reiheStufe: 0, vergleichStufe: 0,
     // buchstaben: null = Vorgabe aus inhalt/buchstaben.js, sonst die im Elternbereich gewählte Liste
-    einst: { bewegung: true, tempo: 50, lautstaerke: 60, stimme: "", sprechtempo: 0.85, buchstaben: null },
+    einst: { bewegung: true, tempo: 50, lautstaerke: 60, stimme: "", sprechtempo: 0.85, buchstaben: null,
+             mitfahren: true, steuerung: "fein" },   // mitfahren: echter Roboter fährt in der Welt langsam mit
   });
   function lade() {
     const s = standard();
@@ -75,6 +76,13 @@ const App = { VERSION: "0.7.0", inhalt: {}, aufgaben: {}, bilder: {} };
     const BU = App.inhalt.buchstaben;
     const liste = (App.stand.einst.buchstaben || BU.aktiv).filter((b) => BU.zeichen[b]);
     return liste.length >= 3 ? liste : BU.aktiv.slice();
+  };
+
+  // Fangen zwei Einträge mit demselben Laut an? Dann dürfen sie nicht zusammen zur Auswahl stehen
+  // (gleicher erster Buchstabe wie E und Ei, oder gleicher Klang wie F und V, C und K, J und Y).
+  App.klingtGleich = (a, b) => {
+    const x = a[0].toUpperCase(), y = b[0].toUpperCase();
+    return x === y || ["CK", "FV", "JY"].some((p) => p.includes(x) && p.includes(y));
   };
 
   // Zähler für einen Buchstaben oder eine Zahl

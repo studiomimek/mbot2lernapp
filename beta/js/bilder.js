@@ -115,6 +115,9 @@
   B.symbol = (name) => ({
     ohr: svg("0 0 100 100", teil.muschel()),
     spur: svg("0 0 100 100", `<path d="M18 70 C28 30 44 30 50 52 C56 74 72 72 82 34" stroke="${F.meer}" stroke-width="12" fill="none" stroke-linecap="round"/><circle cx="18" cy="70" r="10" fill="${F.koralle}"/>`),
+    rad: svg("0 0 100 100", `<circle cx="50" cy="50" r="34" fill="none" stroke="${F.tinte}" stroke-width="9"/><circle cx="50" cy="50" r="14" fill="${F.koralle}"/>`),
+    buch: svg("0 0 100 100", `<path d="M50 30 Q32 18 12 24 V76 Q32 70 50 82 Q68 70 88 76 V24 Q68 18 50 30Z" fill="${F.meer2}"/><path d="M50 30 V82" stroke="${F.tinte}" stroke-width="5"/>`),
+    waage: svg("0 0 100 100", `<path d="M40 26 L14 50 L40 74 M60 26 L86 50 L60 74" stroke="${F.tinte}" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`),
     kiesel: svg("0 0 100 100", `<ellipse cx="32" cy="66" rx="22" ry="17" fill="#8fa3ad"/><ellipse cx="68" cy="68" rx="20" ry="15" fill="#6f8792"/><ellipse cx="52" cy="38" rx="20" ry="16" fill="#aab9c0"/>`),
     bogen: svg("0 0 100 100", `<path d="M10 40 Q30 72 50 40 M50 40 Q70 72 90 40" stroke="${F.koralle}" stroke-width="10" fill="none" stroke-linecap="round"/>`),
     plus: svg("0 0 100 100", `<path d="M50 18 V82 M18 50 H82" stroke="${F.tinte}" stroke-width="15" stroke-linecap="round"/>`),
@@ -171,7 +174,7 @@
     <path d="M0 0 H1024 V70 Q960 94 896 70 T768 70 T640 70 T512 70 T384 70 T256 70 T128 70 T0 70Z" fill="${F.meer2}"/>
     <g fill="#fff" opacity=".07"><path d="M190 70 L60 768 H270Z"/><path d="M520 70 L470 768 H700Z"/><path d="M830 70 L860 768 H1010Z"/></g>
     <path d="M0 566 Q120 504 260 544 T520 524 T800 552 T1024 504 V768 H0Z" fill="${F.tief}"/>
-    <g fill="${F.tief2}" opacity=".85">
+    <g fill="${F.tief2}" opacity=".85" transform="translate(1024 0) scale(-1 1)">
       <path d="M694 536 Q712 480 760 470 L944 446 Q986 478 972 540 Z"/>
       <path d="M822 464 L828 322 L840 322 L844 460Z"/><path d="M840 334 L908 368 L840 392Z"/>
     </g>
@@ -291,4 +294,85 @@
   B.zahnrad = () => svg("0 0 100 100", `
     <circle cx="50" cy="50" r="31" fill="none" stroke="${F.tinte}" stroke-width="18" stroke-dasharray="12.2 12.15"/>
     <circle cx="50" cy="50" r="27" fill="${F.tinte}"/><circle cx="50" cy="50" r="11" fill="${F.papier}"/>`);
+  /* ---------- Piratenwelt ---------- */
+  const P = { abend: "#fbd9ae", abendsonne: "#f59a3c", see: "#2a90aa", tiefsee: "#14607a", tiefsee2: "#0f4f66", planke: "#6b4a30" };
+
+  teil.muenze = () => `<circle cx="50" cy="50" r="40" fill="#e8a81c"/><circle cx="50" cy="50" r="31" fill="${F.sonne}"/><path d="M50 30 V70 M38 40 H62 M38 60 H62" stroke="#e8a81c" stroke-width="6" stroke-linecap="round"/>`;
+  B.muenze = () => svg("0 0 100 100", teil.muenze());
+  B.feder = () => svg("0 0 100 100", `<path d="M22 84 Q20 40 60 12 Q88 30 70 60 Q56 80 22 84Z" fill="${F.koralle}"/><path d="M34 70 Q40 44 60 12 Q64 44 34 70Z" fill="${F.sonne}"/><path d="M14 92 Q30 62 58 22" stroke="${F.tinte}" stroke-width="4" fill="none" stroke-linecap="round"/>`);
+  B.flasche = () => svg("0 0 100 100", `<g transform="rotate(-28 50 50)"><rect x="40" y="6" width="20" height="24" rx="4" fill="#9fd9c2"/><rect x="43" y="2" width="14" height="9" rx="3" fill="${F.holz}"/><path d="M40 28 Q24 36 24 52 V86 Q24 94 34 94 H66 Q76 94 76 86 V52 Q76 36 60 28Z" fill="#b9e8d6"/><rect x="38" y="46" width="24" height="36" rx="5" fill="${F.papier}"/><path d="M38 58 H62 M38 70 H62" stroke="${F.koralle}" stroke-width="4"/></g>`);
+
+  B.pirateninsel = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${P.abend}"/>
+    <circle cx="230" cy="236" r="100" fill="#fff" opacity=".3"/><circle cx="230" cy="236" r="68" fill="${P.abendsonne}"/>
+    <g fill="#fff" opacity=".85"><ellipse cx="470" cy="96" rx="80" ry="24"/><ellipse cx="520" cy="78" rx="50" ry="24"/><ellipse cx="860" cy="70" rx="60" ry="18"/></g>
+    <rect y="262" width="1024" height="250" fill="${P.see}"/>
+    <path d="${welle(304, 14)} V346 H0Z" fill="${F.meer2}" opacity=".45"/>
+    <rect x="700" y="96" width="13" height="250" fill="${F.holz2}"/><rect x="852" y="136" width="13" height="210" fill="${F.holz2}"/>
+    <path d="M640 150 Q706 128 772 150 L764 292 Q706 272 648 292Z" fill="${F.papier}"/>
+    <path d="M806 180 Q858 162 910 180 L904 292 Q858 276 812 292Z" fill="${F.papier}"/>
+    <path d="M713 96 L776 112 L713 132Z" fill="${F.tinte}"/><circle cx="734" cy="112" r="7" fill="${F.papier}"/>
+    <path d="M592 330 Q612 432 700 442 H904 Q966 430 986 320 Z" fill="${F.holz2}"/>
+    <path d="M592 330 H986 L980 356 H598Z" fill="${F.holz}"/>
+    <g fill="${F.sonne}"><circle cx="676" cy="392" r="11"/><circle cx="756" cy="398" r="11"/><circle cx="836" cy="398" r="11"/><circle cx="912" cy="388" r="11"/></g>
+    <path d="${welle(418, 14)} V470 H0Z" fill="${F.meer2}" opacity=".85"/>
+    <path d="M0 478 Q170 438 390 462 T770 478 T1024 506 V768 H0Z" fill="${F.sand2}"/>
+    <path d="M0 508 Q200 470 420 492 T800 508 T1024 534 V768 H0Z" fill="${F.sand}"/>
+    <path d="M70 540 Q58 450 92 366 L112 372 Q86 452 100 540Z" fill="${F.holz}"/>
+    <g fill="${F.blatt}"><path d="M102 368 Q40 320 0 356 Q50 346 102 368Z"/><path d="M102 368 Q70 296 14 292 Q68 318 102 368Z"/><path d="M102 368 Q122 296 186 286 Q140 320 102 368Z"/><path d="M102 368 Q170 324 216 362 Q158 350 102 368Z"/></g>
+    <g><rect x="118" y="596" width="64" height="76" rx="12" fill="${F.holz}"/><path d="M118 618 H182 M118 650 H182" stroke="${F.holz2}" stroke-width="6"/></g>
+    <path d="M736 656 l44 44 m0 -44 l-44 44" stroke="${F.koralle}" stroke-width="12" stroke-linecap="round"/>
+    <g fill="${F.sand2}"><circle cx="420" cy="560" r="5"/><circle cx="560" cy="700" r="5"/><circle cx="900" cy="600" r="4"/><circle cx="250" cy="700" r="5"/></g>
+    <path d="M0 734 Q140 714 280 732 T560 726 T840 736 T1024 720 V768 H0Z" fill="${P.see}"/>`);
+
+  B.wrack = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${P.tiefsee}"/>
+    <path d="M0 0 H1024 V60 Q960 82 896 60 T768 60 T640 60 T512 60 T384 60 T256 60 T128 60 T0 60Z" fill="${F.riff}"/>
+    <g fill="#fff" opacity=".05"><path d="M260 60 L160 768 H360Z"/><path d="M640 60 L620 768 H820Z"/></g>
+    <path d="M0 520 Q140 470 300 500 T620 480 T1024 470 V768 H0Z" fill="${P.tiefsee2}"/>
+    <path d="M548 372 L590 132 L612 136 L586 370Z" fill="${F.holz2}"/>
+    <path d="M604 150 L716 196 Q680 232 700 280 L596 250Z" fill="${F.papier}" opacity=".75"/>
+    <path d="M318 610 Q324 430 470 386 L912 326 Q992 404 968 566 Q700 650 318 610Z" fill="${P.planke}"/>
+    <path d="M352 520 Q620 480 972 440 M336 566 Q640 540 968 506" stroke="${F.holz2}" stroke-width="6" fill="none"/>
+    <ellipse cx="640" cy="520" rx="52" ry="66" fill="${P.tiefsee2}"/>
+    <g fill="${F.sonne}" opacity=".8"><circle cx="470" cy="470" r="13"/><circle cx="800" cy="430" r="13"/><circle cx="890" cy="418" r="13"/></g>
+    <path d="M0 664 Q160 632 320 656 T640 650 T1024 644 V768 H0Z" fill="${F.sand2}"/>
+    <path d="M0 714 Q200 692 400 708 T800 704 T1024 698 V768 H0Z" fill="${F.sand}"/>
+    <g stroke="#9aa7ad" stroke-width="14" fill="none" stroke-linecap="round"><path d="M150 500 V640 M104 594 Q110 650 150 650 Q190 650 196 594 M120 536 H180"/><circle cx="150" cy="484" r="15"/></g>
+    <g class="tang" stroke="${F.blatt}" stroke-width="14" stroke-linecap="round" fill="none"><path d="M250 690 Q232 640 252 590 Q268 550 250 512"/></g>
+    <g class="tang" stroke="${F.blatt2}" stroke-width="14" stroke-linecap="round" fill="none"><path d="M986 690 Q1000 640 984 600"/></g>
+    <g stroke="${F.lila}" stroke-width="16" stroke-linecap="round" fill="none"><path d="M60 690 V636 M60 664 L36 632 M60 670 L88 638"/></g>
+    <g class="blasen" fill="#fff" opacity=".45"><circle cx="640" cy="440" r="8"/><circle cx="656" cy="398" r="5"/><circle cx="330" cy="330" r="6"/><circle cx="880" cy="270" r="5"/></g>`);
+
+  B.wrackNah = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${P.tiefsee}"/>
+    <path d="M0 0 H1024 V44 Q960 66 896 44 T768 44 T640 44 T512 44 T384 44 T256 44 T128 44 T0 44Z" fill="${F.riff}"/>
+    <path d="M0 716 Q200 694 400 710 T800 706 T1024 700 V768 H0Z" fill="${F.sand2}"/>
+    <g class="tang" stroke="${F.blatt2}" stroke-width="14" stroke-linecap="round" fill="none"><path d="M984 720 Q1000 664 982 610 Q968 570 984 530"/></g>
+    <g fill="#fff" opacity=".4" class="blasen"><circle cx="60" cy="430" r="7"/><circle cx="74" cy="390" r="4"/><circle cx="970" cy="330" r="6"/></g>`);
+
+  B.figurSteuerrad = () => svg("0 0 200 190", `
+    <rect x="92" y="110" width="16" height="78" fill="${F.holz2}"/>
+    <g stroke="${F.holz}" stroke-width="13" stroke-linecap="round"><path d="M100 14 V166 M24 90 H176 M46 36 L154 144 M154 36 L46 144"/></g>
+    <circle cx="100" cy="90" r="56" fill="none" stroke="${F.holz2}" stroke-width="16"/>
+    <circle cx="100" cy="90" r="18" fill="${F.sonne}"/>`);
+
+  B.figurPapagei = () => svg("0 0 200 190", `
+    <rect x="30" y="150" width="140" height="12" rx="6" fill="${F.holz}"/><rect x="94" y="158" width="12" height="32" fill="${F.holz2}"/>
+    <path d="M118 148 Q150 176 142 188 Q118 176 108 150Z" fill="${F.meer}"/>
+    <ellipse cx="100" cy="100" rx="42" ry="56" fill="${F.koralle}"/>
+    <path d="M104 84 Q150 96 132 150 Q104 136 104 84Z" fill="${F.blatt}"/>
+    <circle cx="86" cy="52" r="34" fill="${F.koralle}"/>
+    <path d="M58 52 Q30 56 44 86 Q62 78 66 60Z" fill="${F.sonne}"/>
+    <circle cx="84" cy="46" r="10" fill="${F.papier}"/><circle cx="82" cy="47" r="5" fill="${F.tinte}"/>
+    <path d="M86 150 v8 M108 150 v8" stroke="${F.tinte}" stroke-width="5" stroke-linecap="round"/>`);
+
+  B.figurFlasche = () => svg("0 0 200 170", `
+    <ellipse cx="100" cy="140" rx="92" ry="22" fill="#fff" opacity=".12"/>
+    <g transform="translate(40 14) scale(1.3)">${B.flasche().replace(/<\/?svg[^>]*>/g, "")}</g>`);
+
+  B.figurMuenzen = () => svg("0 0 210 170", `
+    <g transform="translate(6 78) scale(.8)">${teil.muenze()}</g><g transform="translate(64 86) scale(.8)">${teil.muenze()}</g><g transform="translate(122 78) scale(.8)">${teil.muenze()}</g>
+    <g transform="translate(36 38) scale(.8)">${teil.muenze()}</g><g transform="translate(94 40) scale(.8)">${teil.muenze()}</g>
+    <g transform="translate(66 0) scale(.8)">${teil.muenze()}</g>`);
 })();

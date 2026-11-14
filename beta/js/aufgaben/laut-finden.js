@@ -67,7 +67,7 @@
         frageKnopf.classList.toggle("nur-ton", mitAufnahme);
 
         // Keine Auswahl mit gleichem ersten Buchstaben (sonst wäre bei „Eis“ sowohl Ei als auch E richtig)
-        let andere = alle.filter((b) => b[0] !== ziel[0]);
+        let andere = alle.filter((b) => !App.klingtGleich(b, ziel));
         if (andere.length < 2) andere = alle.filter((b) => b !== ziel);
         const auswahl = App.misch([ziel, ...App.misch(andere).slice(0, 2)]);
         reihe.innerHTML = "";

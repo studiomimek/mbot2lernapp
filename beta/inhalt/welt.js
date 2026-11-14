@@ -25,15 +25,15 @@ App.inhalt.welt = {
     strand: {
       name: "Strand", bild: "strand", ansage: "Am Strand.", licht: [255, 150, 0],
       rover: { x: 512, y: 540 }, boden: 480,
-      nachbarn: { unten: "riff", rechts: "raketenstation" },
+      nachbarn: { unten: "riff", rechts: "raketenstation", links: "pirateninsel" },
       einstiege: [
         { id: "krebse", titel: "Laute hören", aufgabe: "laut-finden", figur: "figurKrebse", symbol: "ohr",
-          x: 250, y: 572, breite: 230, fund: "muschel", inhalt: { runden: 5 } },
+          x: 310, y: 572, breite: 230, fund: "muschel", inhalt: { runden: 5 } },
         { id: "sandspur", titel: "Buchstaben spuren", aufgabe: "nachspuren", figur: "figurSandspur", symbol: "spur",
           x: 730, y: 580, breite: 236, fund: "seestern", inhalt: { runden: 4 } },
       ],
       entdeckungen: [
-        { id: "kokosnuss", x: 130, y: 524, r: 56, zeigt: "kokosnuss", bei: { x: 156, y: 470 }, breite: 70, sag: "Plumps! Eine Kokosnuss." },
+        { id: "kokosnuss", x: 176, y: 500, r: 46, zeigt: "kokosnuss", bei: { x: 156, y: 440 }, breite: 70, sag: "Plumps! Eine Kokosnuss." },
         { id: "felsenkrebs", x: 858, y: 500, r: 48, zeigt: "krebs", bei: { x: 924, y: 470 }, breite: 96, sag: "Hallo, kleiner Krebs!" },
         { id: "sandmuschel", x: 384, y: 672, r: 48, zeigt: "muschel", bei: { x: 384, y: 636 }, breite: 70, sag: "Eine Muschel im Sand!" },
       ],
@@ -41,14 +41,14 @@ App.inhalt.welt = {
     riff: {
       name: "Riff", bild: "riff", ansage: "Im Riff.", licht: [0, 90, 255],
       rover: { x: 512, y: 220 }, boden: 60,
-      nachbarn: { oben: "strand", rechts: "wrack" },
+      nachbarn: { oben: "strand", links: "wrack" },
       einstiege: [
         { id: "schwarm", titel: "Fische zählen", aufgabe: "mengen", figur: "figurSchwarm", symbol: "kiesel",
           x: 400, y: 420, breite: 260, fund: "perle", inhalt: { runden: 5 } },
       ],
       entdeckungen: [
-        { id: "korallenfisch", x: 130, y: 620, r: 56, zeigt: "fisch", farbe: "#f9c23c", bei: { x: 160, y: 548 }, breite: 100, sag: "Ein Fisch hat sich versteckt!" },
-        { id: "wrackperle", x: 830, y: 474, r: 66, zeigt: "perle", bei: { x: 836, y: 420 }, breite: 84, sag: "Ein altes Schiff. Und darin eine Perle!" },
+        { id: "korallenfisch", x: 916, y: 630, r: 54, zeigt: "fisch", farbe: "#f9c23c", bei: { x: 900, y: 556 }, breite: 100, sag: "Ein Fisch hat sich versteckt!" },
+        { id: "wrackperle", x: 210, y: 440, r: 60, zeigt: "perle", bei: { x: 200, y: 380 }, breite: 84, sag: "Da hinten liegt ein altes Schiff. Und davor eine Perle!" },
         { id: "steinstern", x: 574, y: 680, r: 48, zeigt: "seestern", bei: { x: 574, y: 644 }, breite: 78, sag: "Ein Seestern!" },
       ],
     },
@@ -69,6 +69,35 @@ App.inhalt.welt = {
         { id: "funksignal", x: 934, y: 524, r: 50, zeigt: "funk", bei: { x: 912, y: 250 }, breite: 120, sag: "Piep, piep! Ein Funksignal aus dem All." },
       ],
     },
-    wrack: { name: "Piratenwrack", bald: true },
+    pirateninsel: {
+      name: "Pirateninsel", bild: "pirateninsel", ansage: "Auf der Pirateninsel.", licht: [255, 60, 0],
+      rover: { x: 470, y: 600 }, boden: 520,
+      nachbarn: { rechts: "strand", unten: "wrack" },
+      einstiege: [
+        { id: "steuern", titel: "Roboter steuern", aufgabe: "steuern", figur: "figurSteuerrad", symbol: "rad",
+          x: 300, y: 596, breite: 170, inhalt: {} },
+        { id: "papagei", titel: "Was fängt an wie …?", aufgabe: "anlaut-bilder", figur: "figurPapagei", symbol: "ohr",
+          x: 610, y: 600, breite: 170, fund: "feder", inhalt: { runden: 5 } },
+      ],
+      entdeckungen: [
+        { id: "fasskrebs", x: 150, y: 690, r: 46, zeigt: "krebs", bei: { x: 150, y: 590 }, breite: 96, sag: "Im Fass wohnt ein Krebs!" },
+        { id: "schatzkreuz", x: 758, y: 680, r: 48, zeigt: "muenze", bei: { x: 758, y: 640 }, breite: 80, sag: "Hier ist ein Schatz vergraben. Eine Goldmünze!" },
+      ],
+    },
+    wrack: {
+      name: "Piratenwrack", bild: "wrack", ansage: "Beim Piratenwrack.", licht: [0, 200, 160],
+      rover: { x: 512, y: 220 }, boden: 60,
+      nachbarn: { oben: "pirateninsel", rechts: "riff" },
+      einstiege: [
+        { id: "flaschenpost", titel: "Wörter lesen", aufgabe: "lesen", figur: "figurFlasche", symbol: "buch",
+          x: 330, y: 250, breite: 180, fund: "flasche", inhalt: { runden: 5 } },
+        { id: "muenzen", titel: "Mehr oder weniger", aufgabe: "vergleichen", figur: "figurMuenzen", symbol: "waage",
+          x: 800, y: 650, breite: 190, fund: "muenze", inhalt: { runden: 5 } },
+      ],
+      entdeckungen: [
+        { id: "ankerfisch", x: 150, y: 600, r: 52, zeigt: "fisch", farbe: "#b565c9", bei: { x: 150, y: 520 }, breite: 100, sag: "Ein Fisch wohnt beim Anker." },
+        { id: "schiffsschatz", x: 640, y: 520, r: 50, zeigt: "truhe", bei: { x: 640, y: 470 }, breite: 100, sag: "Im Schiff steht eine Schatzkiste!" },
+      ],
+    },
   },
 };

@@ -8,6 +8,7 @@
   const FUNDNAME = {
     muschel: "eine Muschel", seestern: "einen Seestern", perle: "eine Perle",
     stern: "einen Stern", planet: "einen Planeten", rakete: "eine kleine Rakete",
+    feder: "eine Papageienfeder", flasche: "eine Flaschenpost", muenze: "eine Goldmünze",
   };
   let lauf = null;   // laufende Aufgabe
 
@@ -50,6 +51,7 @@
         $("#punkte").innerHTML = Array.from({ length: n }, (_, k) => `<i class="${k < i ? "voll" : k === i ? "jetzt" : ""}"></i>`).join("");
       },
       wiederhole(fn) { meins.wiederhole = fn; },
+      beimEnde(fn) { meins.ende = fn; },                 // Aufräumen, wenn die Aufgabe verlassen wird
       // Reaktionen: Figur auf dem Bildschirm, Klang auf dem iPad (nur ohne Roboter), echter Roboter
       zeige(text) { roverZeige(text); MBot.reaktion.zeige(text); },
       richtig() { roverStimmung("freu"); if (ohneRoboter()) App.audio.klang("richtig"); MBot.reaktion.richtig(); },
@@ -85,6 +87,7 @@
     const l = lauf;
     if (!l) return;
     l.lebt = false; lauf = null;
+    if (l.ende) { try { l.ende(); } catch (_) {} }
     App.still();
     if (!erfolg) { App.log("Aufgabe verlassen"); MBot.reaktion.ruhe(); zurWelt(l.einstieg.id); return; }
 
@@ -134,6 +137,7 @@
     MBot.einstellungen.bewegung = !!e.bewegung;
     MBot.einstellungen.tempo = +e.tempo || 50;
     MBot.einstellungen.lautstaerke = +e.lautstaerke || 0;
+    MBot.einstellungen.steuerung = e.steuerung === "einfach" ? "einfach" : "fein";
   }
 
   let statusText = "Nicht verbunden";
@@ -169,6 +173,7 @@
     ["mengenStufe", "Mengen (Fische)", App.inhalt.mengen.stufen],
     ["plusStufe", "Plus (Sterne)", App.inhalt.rechnen.plus],
     ["reiheStufe", "Zahlenreihe", App.inhalt.rechnen.reihe],
+    ["vergleichStufe", "Vergleichen (Münzen)", App.inhalt.rechnen.vergleichen],
   ];
 
   function fuelleStimmen() {
@@ -244,6 +249,8 @@
     const e = App.stand.einst;
     App.welt.halt();
     $("#e-bewegung").checked = !!e.bewegung;
+    $("#e-mitfahren").checked = !!e.mitfahren;
+    $("#e-steuerung").value = e.steuerung === "einfach" ? "einfach" : "fein";
     $("#e-tempo").value = e.tempo; $("#e-tempo-wert").textContent = e.tempo;
     $("#e-laut").value = e.lautstaerke; $("#e-laut-wert").textContent = e.lautstaerke;
     $("#e-sprechtempo").value = e.sprechtempo; $("#e-sprechtempo-wert").textContent = e.sprechtempo;
@@ -275,6 +282,8 @@
     $("#e-trennen").addEventListener("click", () => MBot.trenne());
 
     $("#e-bewegung").addEventListener("change", (ev) => { e.bewegung = ev.target.checked; merke(); });
+    $("#e-mitfahren").addEventListener("change", (ev) => { e.mitfahren = ev.target.checked; merke(); });
+    $("#e-steuerung").addEventListener("change", (ev) => { e.steuerung = ev.target.value; merke(); if (MBot.verbunden()) MBot.pruefeFein(); });
     $("#e-tempo").addEventListener("input", (ev) => { e.tempo = +ev.target.value; $("#e-tempo-wert").textContent = e.tempo; merke(); });
     $("#e-laut").addEventListener("input", (ev) => { e.lautstaerke = +ev.target.value; $("#e-laut-wert").textContent = e.lautstaerke; merke(); });
     $("#e-laut").addEventListener("change", () => { if (MBot.verbunden()) MBot.run(`cyberpi.audio.set_vol(${+e.lautstaerke})`).catch(() => {}); });

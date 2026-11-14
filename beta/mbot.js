@@ -7,7 +7,7 @@
 "use strict";
 
 const MBot = (() => {
-  const VERSION = "0.7.0";
+  const VERSION = "0.8.0";
 
   /* ---------- Konstanten: Makeblock Live-Mode-Protokoll (f3/f4) ---------- */
   const uuid16 = (x) => `0000${x}-0000-1000-8000-00805f9b34fb`;
@@ -49,7 +49,8 @@ const MBot = (() => {
   }
 
   // Werden von der Seite gesetzt (App: aus dem Speicher, Testkonsole: aus den Reglern)
-  const einstellungen = { bewegung: false, tempo: 50, lautstaerke: 60, rohdaten: false };
+  // steuerung: "fein" = stufenlos mit drive_power (falls der Roboter das kann), "einfach" = nur vor/zurück/drehen
+  const einstellungen = { bewegung: false, tempo: 50, lautstaerke: 60, rohdaten: false, steuerung: "fein" };
 
   /* ---------- Protokoll ---------- */
   function buildScriptFrame(script, idx, mode) {
@@ -149,8 +150,8 @@ const MBot = (() => {
   }
 
   // Befehl ohne Antwort
-  async function run(code) {
-    log(`→ ${code}`);
+  async function run(code, leise = false) {
+    if (!leise) log(`→ ${code}`);
     await writeFrame(buildScriptFrame(code, nextIdx(), MODE_NO_RESPONSE));
   }
 
@@ -252,6 +253,7 @@ const MBot = (() => {
       await run("cyberpi.led.on(0,0,255)");
       await run("cyberpi.audio.play_tone(660,0.15)");
       log("Bereit. Roboter sollte kurz blau leuchten und piepen.", "r");
+      await pruefeFein();
       setStatus("on", `Verbunden: ${device.name || "mBot2"}`);
       return true;
     } catch (e) {
@@ -304,25 +306,89 @@ const MBot = (() => {
 
   // Hält sofort an und bricht alle laufenden Abläufe ab
   async function stopp() {
-    epoche++; faehrt = false;
+    epoche++; faehrt = false; gewuenscht = STOPP_CODE; letzteFahrt = "";
     log("STOPP", "w");
     if (bot.connected) await run("mbot2.EM_stop()");
   }
+
+  /* ---------- Dauerfahrt (Steuerknüppel, Mitfahren in der Welt) ----------
+   * fahre(vor, dreh, tempoMax): vor und dreh von -1 bis 1, tempoMax = Motorleistung in Prozent.
+   * Gesendet wird nur, wenn sich der Befehl ändert, und höchstens alle 100 ms. Anhalten geht immer sofort.
+   * Während einer Reaktion (Tanz, Staunen …) wird nicht gefahren.
+   * Restrisiko wie bei allen Fahrten: Reißt Bluetooth ab, fährt der Roboter weiter. Deshalb langsam fahren.
+   */
+  const STOPP_CODE = "mbot2.EM_stop()";
+  let fein = null;                      // null = noch nicht geprüft, true = drive_power geht
+  let gewuenscht = STOPP_CODE, letzteFahrt = "", fahrUhr = 0, reaktionen = 0;
+
+  async function pruefeFein() {
+    if (einstellungen.steuerung !== "fein") { fein = false; return false; }
+    try { await evalExpr("mbot2.drive_power(0,0)", 1500); fein = true; }
+    catch (_) { fein = false; }
+    log(fein ? "Stufenlose Steuerung (drive_power) verfügbar." : "Stufenlose Steuerung nicht verfügbar, nutze vor/zurück/drehen.", fein ? "r" : "w");
+    return fein;
+  }
+
+  function sendeFahrt() {
+    if (gewuenscht === letzteFahrt || !bot.connected) return;
+    letzteFahrt = gewuenscht;
+    faehrt = gewuenscht !== STOPP_CODE;
+    run(gewuenscht, true).catch((e) => log(`Fahrbefehl fehlgeschlagen: ${errText(e)}`, "e"));
+    clearTimeout(fahrUhr);
+    fahrUhr = setTimeout(() => { fahrUhr = 0; sendeFahrt(); }, 100);
+  }
+
+  function fahre(vor, dreh, tempoMax = 40) {
+    if (!bot.connected) return;
+    let code = STOPP_CODE;
+    const betrag = Math.min(1, Math.hypot(vor, dreh));
+    if (betrag >= 0.18 && einstellungen.bewegung && reaktionen === 0) {
+      const stufe = (x) => Math.round(Math.max(-tempoMax, Math.min(tempoMax, x)) / 5) * 5;
+      if (fein && einstellungen.steuerung === "fein") {
+        // EM1 = linker Motor, EM2 = rechter Motor (spiegelverkehrt eingebaut, deshalb das Minus)
+        code = `mbot2.drive_power(${stufe((vor + dreh) * tempoMax)},${-stufe((vor - dreh) * tempoMax)})`;
+      } else {
+        const t = Math.max(15, stufe(betrag * tempoMax));
+        code = Math.abs(vor) >= Math.abs(dreh)
+          ? `mbot2.${vor > 0 ? "forward" : "backward"}(${t})`
+          : `mbot2.${dreh > 0 ? "turn_right" : "turn_left"}(${Math.max(15, stufe(t * 0.7))})`;
+      }
+    }
+    gewuenscht = code;
+    if (code === STOPP_CODE) { clearTimeout(fahrUhr); fahrUhr = 0; sendeFahrt(); }
+    else if (!fahrUhr) sendeFahrt();
+  }
+
+  /* ---------- Sprachaufnahme mit dem Mikrofon des Roboters (noch nicht am echten Roboter bestätigt) ---------- */
+  const aufnahme = {
+    async start() {
+      if (!bot.connected) return false;
+      try { await evalExpr("cyberpi.audio.record()", 2500); return true; }
+      catch (e) { log("Aufnahme: keine Antwort auf cyberpi.audio.record()", "w"); return false; }
+    },
+    async stopp() {
+      if (!bot.connected) return;
+      try { await evalExpr("cyberpi.audio.stop_record()", 2500); } catch (_) {}
+    },
+    spiele: () => still("cyberpi.audio.play_record()"),
+  };
 
   /* ---------- Reaktionen ----------
    * Jede Reaktion bricht die vorherige ab. Ohne Verbindung passiert nichts, Fehler werden nur geloggt.
    * Bewegungen sind kurz (höchstens 0,4 s am Stück) und laufen nur mit einstellungen.bewegung.
    */
   async function neueEpoche() {
-    epoche++;
+    epoche++; letzteFahrt = "";
     if (faehrt) { faehrt = false; await run("mbot2.EM_stop()"); }
     return epoche;
   }
   function alsReaktion(name, fn) {
     return async (...args) => {
       if (!bot.connected) return;
+      reaktionen++;
       try { const ep = await neueEpoche(); await fn(ep, ...args); }
       catch (e) { log(`Reaktion „${name}“ fehlgeschlagen: ${errText(e)}`, "e"); }
+      finally { reaktionen--; }
     };
   }
   function still(code) {   // einzelner Befehl, der keinen Ablauf abbricht
@@ -436,6 +502,28 @@ const MBot = (() => {
       if (!gestoppt(ep)) await run(grund());
     }),
 
+    // Disco: Regenbogenlicht, Melodie und Tanzschritte (etwa 6 Sekunden, mit STOPP abbrechbar)
+    disco: alsReaktion("disco", async (ep) => {
+      const lied = [[523, 0.12], [659, 0.12], [784, 0.12], [659, 0.12], [880, 0.12], [784, 0.12], [1047, 0.22]];
+      for (let i = 0; i < 2 && !gestoppt(ep); i++) {
+        await run("cyberpi.led.play(name='rainbow')");
+        await tones(lied.slice(0, 4), ep);
+        await BEWEGUNG.wackeln(ep);
+        await tones(lied.slice(4), ep);
+        await BEWEGUNG[i ? "zappeln" : "drehen"](ep);
+      }
+      if (!gestoppt(ep)) await run(grund());
+    }),
+
+    // Kreisel: dreimal kurz hintereinander rechts herum
+    kreisel: alsReaktion("kreisel", async (ep) => {
+      await tones([[1319, 0.05], [1760, 0.05], [2349, 0.08]], ep);
+      for (let i = 0; i < 3; i++) await move("turn_right", 60, 0.4, ep);
+    }),
+
+    // Kurzes Zwitschern ohne Bewegung (Hupe)
+    zwitschern: alsReaktion("zwitschern", async (ep) => { await tones(zwitscher(5), ep); }),
+
     // Bricht die laufende Reaktion ab (und hält an, falls der Roboter gerade fährt)
     ruhe: alsReaktion("ruhe", async () => {}),
 
@@ -473,6 +561,8 @@ const MBot = (() => {
     verbinde, trenne,
     run, evalExpr,
     move, tones, stopp, warteAufHand,
+    fahre, pruefeFein, aufnahme,
+    kannFein: () => !!fein,
     epoche: () => epoche,
     gestoppt,
     reaktion,

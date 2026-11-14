@@ -11,6 +11,12 @@ App.inhalt.rechnen = {
     { name: "Plus bis 10", summeBis: 10, auswahl: 4 },
     { name: "Ergänzen bis 10 (3 + ? = 7)", summeBis: 10, auswahl: 4, ergaenzen: true },
   ],
+  // Vergleichen: zwei Haufen Münzen. „zeichen“ = zwischen zwei Zahlen <, > oder = wählen
+  vergleichen: [
+    { name: "mehr oder weniger bis 6", bis: 6 },
+    { name: "mehr oder weniger bis 10", bis: 10 },
+    { name: "Zeichen < > = bis 10", bis: 10, zeichen: true },
+  ],
   // Zahlenreihe: fünf Zahlen, eine fehlt
   reihe: [
     { name: "vorwärts bis 10", bis: 10, richtung: 1 },

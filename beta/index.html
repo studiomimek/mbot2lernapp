@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Die Bucht – mBot2-Lernapp</title>
-<link rel="stylesheet" href="stil.css?v=0.7.0">
+<link rel="stylesheet" href="stil.css?v=0.8.0">
 </head>
 <body>
 
@@ -68,9 +68,11 @@
           <button id="e-probe-robo" class="e-knopf">Reaktion testen</button>
         </div>
         <label class="e-haken"><input type="checkbox" id="e-bewegung"> Bewegung erlauben (Roboter steht auf dem Boden)</label>
+        <label class="e-haken"><input type="checkbox" id="e-mitfahren"> Roboter fährt in der Welt langsam mit, wenn die Figur fährt</label>
+        <div class="e-reihe"><span class="e-name">Steuerung</span><select id="e-steuerung"><option value="fein">stufenlos (wie ein Steuerknüppel)</option><option value="einfach">einfach (nur vor, zurück, drehen)</option></select></div>
         <div class="e-reihe"><span class="e-name">Fahrtempo</span><input type="range" id="e-tempo" min="20" max="60" step="5"><span id="e-tempo-wert" class="e-wert"></span></div>
         <div class="e-reihe"><span class="e-name">Lautstärke Roboter</span><input type="range" id="e-laut" min="0" max="100" step="10"><span id="e-laut-wert" class="e-wert"></span></div>
-        <p class="e-hinweis">Bewegungen dauern höchstens 0,4 Sekunden am Stück. Der rote STOPP-Knopf oben rechts hält den Roboter sofort an.</p>
+        <p class="e-hinweis">Reaktionen bewegen den Roboter höchstens 0,4 Sekunden am Stück. Beim Steuern und Mitfahren fährt er, solange der Finger auf dem Bildschirm liegt. Der rote STOPP-Knopf oben rechts hält ihn sofort an. Falls er beim Vorwärtsfahren dreht: Steuerung auf „einfach“ stellen.</p>
       </section>
 
       <section>
@@ -100,21 +102,26 @@
 <!-- unsichtbar: zerlegt Strichdaten in Punkte -->
 <svg id="mess" width="0" height="0" aria-hidden="true"><path id="messpfad" d=""/></svg>
 
-<script src="mbot.js?v=0.7.0"></script>
-<script src="js/kern.js?v=0.7.0"></script>
-<script src="js/bilder.js?v=0.7.0"></script>
-<script src="inhalt/buchstaben.js?v=0.7.0"></script>
-<script src="inhalt/mengen.js?v=0.7.0"></script>
-<script src="inhalt/silben.js?v=0.7.0"></script>
-<script src="inhalt/rechnen.js?v=0.7.0"></script>
-<script src="inhalt/welt.js?v=0.7.0"></script>
-<script src="js/welt.js?v=0.7.0"></script>
-<script src="js/aufgaben/laut-finden.js?v=0.7.0"></script>
-<script src="js/aufgaben/nachspuren.js?v=0.7.0"></script>
-<script src="js/aufgaben/mengen.js?v=0.7.0"></script>
-<script src="js/aufgaben/silben.js?v=0.7.0"></script>
-<script src="js/aufgaben/plus.js?v=0.7.0"></script>
-<script src="js/aufgaben/reihe.js?v=0.7.0"></script>
-<script src="js/app.js?v=0.7.0"></script>
+<script src="mbot.js?v=0.8.0"></script>
+<script src="js/kern.js?v=0.8.0"></script>
+<script src="js/bilder.js?v=0.8.0"></script>
+<script src="inhalt/buchstaben.js?v=0.8.0"></script>
+<script src="inhalt/mengen.js?v=0.8.0"></script>
+<script src="inhalt/silben.js?v=0.8.0"></script>
+<script src="inhalt/rechnen.js?v=0.8.0"></script>
+<script src="inhalt/woerter.js?v=0.8.0"></script>
+<script src="inhalt/welt.js?v=0.8.0"></script>
+<script src="js/welt.js?v=0.8.0"></script>
+<script src="js/aufgaben/laut-finden.js?v=0.8.0"></script>
+<script src="js/aufgaben/nachspuren.js?v=0.8.0"></script>
+<script src="js/aufgaben/mengen.js?v=0.8.0"></script>
+<script src="js/aufgaben/silben.js?v=0.8.0"></script>
+<script src="js/aufgaben/plus.js?v=0.8.0"></script>
+<script src="js/aufgaben/reihe.js?v=0.8.0"></script>
+<script src="js/aufgaben/steuern.js?v=0.8.0"></script>
+<script src="js/aufgaben/anlaut-bilder.js?v=0.8.0"></script>
+<script src="js/aufgaben/lesen.js?v=0.8.0"></script>
+<script src="js/aufgaben/vergleichen.js?v=0.8.0"></script>
+<script src="js/app.js?v=0.8.0"></script>
 </body>
 </html>

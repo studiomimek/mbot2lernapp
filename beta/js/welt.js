@@ -11,6 +11,7 @@
   const B = App.bilder;
   const TEMPO = 420;                 // Pixel pro Sekunde
   const HALB_B = 60, HALB_H = 52;    // halbe Größe der Spielfigur
+  const MITFAHR_TEMPO = 25;          // Motorleistung, mit der der echte Roboter in der Welt mitfährt (langsam)
   const VERWEILEN = 600;             // so lange muss die Figur beim Durchfahren in einer Zone bleiben (ms)
   const PFEIL_ORT = { oben: { x: 512, y: 56 }, unten: { x: 512, y: 710 }, links: { x: 58, y: 560 }, rechts: { x: 966, y: 560 } };
 
@@ -113,20 +114,26 @@
     if (opt.ansage) App.sag(opt.ansage);
 
     const meinLauf = ++lauf;
-    let zuletzt = performance.now();
+    let zuletzt = performance.now(), fuhr = false;
     function schritt(jetzt) {
       if (meinLauf !== lauf) return;
       const dt = Math.min(100, jetzt - zuletzt) / 1000;
       zuletzt = jetzt;
-      let faehrt = false;
+      let faehrt = false, rx = 0, ry = 0;
       if (ziel) {
         const dx = ziel.x - pos.x, dy = ziel.y - pos.y, d = Math.hypot(dx, dy), s = TEMPO * dt;
         if (d <= s) { pos = { x: ziel.x, y: ziel.y }; if (!fingerUnten) ziel = null; }
-        else { pos.x += dx / d * s; pos.y += dy / d * s; faehrt = true; }
+        else { pos.x += dx / d * s; pos.y += dy / d * s; faehrt = true; rx = dx / d; ry = dy / d; }
         setze();
       }
       const rover = $("#welt-rover");
       if (rover) rover.classList.toggle("faehrt", faehrt);
+      // Der echte Roboter fährt langsam mit: nach oben = vorwärts, nach unten = rückwärts, seitlich = drehen
+      if (App.stand.einst.mitfahren) {
+        if (faehrt) MBot.fahre(-ry, rx * 0.8, MITFAHR_TEMPO);
+        else if (fuhr) MBot.fahre(0, 0);
+      }
+      fuhr = faehrt;
 
       for (const z of zonen) {
         if (!inZone(z, pos)) { z.scharf = true; z.seit = 0; z.el.classList.remove("nah"); continue; }
@@ -150,6 +157,7 @@
       return false;
     }
     gesperrt = true; ziel = null; lauf++;
+    MBot.fahre(0, 0);
     App.audio.klang("neugierig");
     const rover = $("#welt-rover");
     if (rover) rover.classList.remove("faehrt");
@@ -181,7 +189,7 @@
   }
 
   // Wird aufgerufen, wenn die Welt verdeckt wird (z. B. Elternbereich): Figur bleibt stehen
-  function halt() { ziel = null; fingerUnten = false; }
+  function halt() { ziel = null; fingerUnten = false; MBot.fahre(0, 0); }
 
   App.welt = { zeige, halt };
 })();
