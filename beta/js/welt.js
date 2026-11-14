@@ -133,7 +133,7 @@
     for (const z of zonen) { z.scharf = !z.drin(pos); z.seit = 0; }   // erst scharf, wenn die Figur einmal draußen war
     setze();
 
-    if (App.stand.ort !== id) { App.stand.ort = id; App.speichere(); }
+    if (App.stand.ort !== id || !App.stand.besucht[id]) { App.stand.ort = id; App.stand.besucht[id] = 1; App.speichere(); }
     if (ort.licht) MBot.reaktion.licht(...ort.licht);
     MBot.reaktion.leere();
     if (opt.ansage) App.sag(opt.ansage);

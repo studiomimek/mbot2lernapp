@@ -473,3 +473,43 @@ button svg, .rover svg, .abzeichen svg, .schloss svg { display: block; width: 10
 .wk-stern.auf { animation: huepf .6s; }
 .wk-hand { left: 300px; }
 .sb-klatsch.hoert::after { content: "🎤"; position: absolute; right: -10px; top: -10px; width: 52px; height: 52px; border-radius: 50%; background: var(--papier); font-size: 30px; line-height: 52px; box-shadow: var(--schatten); }
+
+/* ---------- v0.10: Weltkarte ---------- */
+#btn-karte { left: 118px; top: 20px; width: 76px; height: 76px; padding: 13px; }
+#karte { z-index: 8; background: rgba(18, 90, 115, .96); animation: einblenden .25s; }
+.karte-wege { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; }
+.karte-wege line { stroke: rgba(255, 248, 234, .55); stroke-width: 10; stroke-linecap: round; }
+.karte-ort {
+  position: absolute; width: 168px; height: 126px; border-radius: 22px; overflow: hidden; border: 6px solid var(--papier);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .25); background: var(--papier);
+}
+.karte-ort svg { display: block; width: 100%; height: 100%; }
+.karte-ort.hier { border-color: var(--sonne); box-shadow: 0 0 0 8px rgba(249, 194, 60, .45), 0 6px 0 rgba(0, 0, 0, .25); }
+.karte-ort.fremd { background: rgba(255, 248, 234, .14); border: 6px dashed rgba(255, 248, 234, .5); box-shadow: none; color: rgba(255, 248, 234, .7); font: 700 70px/100px -apple-system, "Segoe UI", sans-serif; }
+.karte-ort:active { transform: scale(.96); }
+.karte-ort.wackel { animation: wackel .45s; }
+.karte-zu { left: 16px; top: 14px; }
+
+/* ---------- v0.10: Bordcomputer ---------- */
+.bc-pult { position: absolute; left: 190px; top: 96px; width: 800px; height: 580px; border-radius: 44px; background: #5a6390; box-shadow: inset 0 14px 0 #7480b3, 0 10px 0 rgba(0, 0, 0, .25); }
+.bc-schirm { position: absolute; left: 40px; top: 40px; width: 720px; height: 104px; border-radius: 22px; background: #141a3a; display: flex; align-items: center; justify-content: center; gap: 14px; }
+.bc-schirm i { display: block; width: 16px; height: 40px; border-radius: 8px; background: #7df0a8; animation: pegel 1s ease-in-out infinite; }
+.bc-schirm i:nth-child(2n) { animation-delay: -.3s; }
+.bc-schirm i:nth-child(3n) { animation-delay: -.6s; }
+.bc-schirm.ok { background: #1d6b45; }
+@keyframes pegel { 0%, 100% { transform: scaleY(.4); } 50% { transform: scaleY(1.4); } }
+.bc-knoepfe { position: absolute; left: 40px; top: 186px; display: flex; gap: 26px; }
+.bc-knopf { width: 124px; height: 124px; border-radius: 50%; box-shadow: 0 10px 0 rgba(0, 0, 0, .3), inset 0 -10px 0 rgba(0, 0, 0, .14), inset 0 10px 0 rgba(255, 255, 255, .25); }
+.bc-knopf:active { transform: translateY(7px); box-shadow: 0 3px 0 rgba(0, 0, 0, .3), inset 0 -10px 0 rgba(0, 0, 0, .14); }
+.bc-knopf.blitzt { animation: blitzen .35s; }
+@keyframes blitzen { 0% { filter: brightness(1.9); } 100% { filter: brightness(1); } }
+.bc-tasten { position: absolute; left: 40px; top: 376px; display: flex; gap: 26px; }
+.bc-taste { width: 124px; height: 124px; border-radius: 26px; background: var(--papier); box-shadow: 0 9px 0 rgba(0, 0, 0, .28); font: 400 68px/1 "Grundschrift", "Segoe Print", cursive; color: var(--tinte); }
+.bc-taste:active { transform: translateY(6px); box-shadow: 0 3px 0 rgba(0, 0, 0, .28); }
+.bc-hebel { position: absolute; left: 652px; top: 186px; width: 108px; height: 344px; border-radius: 54px; background: #39426b; box-shadow: inset 0 8px 0 rgba(0, 0, 0, .25); }
+.bc-griff { position: absolute; left: 9px; top: 244px; width: 90px; height: 90px; border-radius: 50%; background: var(--koralle); box-shadow: 0 8px 0 #b94a38, inset 0 10px 0 rgba(255, 255, 255, .25); transition: top .18s; }
+.bc-hebel.oben .bc-griff { top: 10px; }
+
+/* ---------- v0.10: Winken, Anzeige „Roboter sieht die Hand“ ---------- */
+.wk-auge { position: absolute; left: 150px; top: 410px; width: 170px; height: 110px; border-radius: 30px; text-align: center; font-size: 70px; line-height: 110px; background: rgba(255, 248, 234, .12); border: 5px solid rgba(255, 248, 234, .3); transition: background .1s, transform .1s; }
+.wk-auge.an { background: var(--sonne); border-color: var(--papier); transform: scale(1.12); }

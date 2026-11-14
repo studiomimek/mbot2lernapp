@@ -1,7 +1,7 @@
 /* kern.js – Grundgerüst der App: Namensraum, Protokoll, Speicher, Sprache, Töne, Aufnahmen */
 "use strict";
 
-const App = { VERSION: "0.9.0", inhalt: {}, aufgaben: {}, bilder: {} };
+const App = { VERSION: "0.10.0", inhalt: {}, aufgaben: {}, bilder: {} };
 
 (() => {
   /* ---------- Kleine Hilfen ---------- */
@@ -41,7 +41,8 @@ const App = { VERSION: "0.9.0", inhalt: {}, aufgaben: {}, bilder: {} };
   const SCHLUESSEL = "mbot2-lernapp-stand-v1";
   const standard = () => ({
     ort: null,                                    // zuletzt besuchter Ort
-    fund: { muschel: 0, seestern: 0, perle: 0, stern: 0, planet: 0, rakete: 0, feder: 0, flasche: 0, muenze: 0, komet: 0 },   // Fundstücke in der Schatzkiste
+    besucht: {},                                  // Orte, die schon entdeckt wurden (für die Karte)
+    fund: { muschel: 0, seestern: 0, perle: 0, stern: 0, planet: 0, rakete: 0, feder: 0, flasche: 0, muenze: 0, komet: 0, zahnrad: 0 },   // Fundstücke in der Schatzkiste
     entdeckt: {},                                 // gefundene Entdeckungen in der Welt
     buchstaben: {},                               // "M": { richtig, fehler, gespurt }
     zahlen: {},                                   // "7": { richtig, fehler }
@@ -49,7 +50,7 @@ const App = { VERSION: "0.9.0", inhalt: {}, aufgaben: {}, bilder: {} };
     // buchstaben: null = Vorgabe aus inhalt/buchstaben.js, sonst die im Elternbereich gewählte Liste
     einst: { bewegung: true, tempo: 50, lautstaerke: 60, stimme: "", sprechtempo: 0.85, buchstaben: null,
              mitfahren: true, steuerung: "fein",
-             klatschen: "aus", klatschSchwelle: 0.35 },   // klatschen: "aus" | "ipad" | "roboter" (Mikrofon fürs Silben-Klatschen)   // mitfahren: echter Roboter fährt in der Welt langsam mit
+             klatschen: "auto", klatschSchwelle: 0.35 },  // klatschen: "auto" | "aus" | "ipad" | "roboter" (Mikrofon fürs Silben-Klatschen)   // mitfahren: echter Roboter fährt in der Welt langsam mit
   });
   function lade() {
     const s = standard();
@@ -202,13 +203,19 @@ const App = { VERSION: "0.9.0", inhalt: {}, aufgaben: {}, bilder: {} };
    * Während das iPad spricht, wird nicht gehört. sperre() verhindert, dass der eigene Ton mitgezählt wird.
    */
   App.klatschen = (() => {
-    let strom = null, uhr = 0, hoerer = null, mittel = 0.02, letzter = 0, lauf = 0;
+    let strom = null, uhr = 0, hoerer = null, mittel = 0.02, letzter = 0, lauf = 0, zahl = 0, spitze = 0;
     const K = { pegel: 0, quelle: "aus" };
     function pruefe(pegel) {
       const jetzt = performance.now();
       K.pegel = pegel;
-      const schwelle = Math.max(+App.stand.einst.klatschSchwelle || 0.35, mittel * 4);
-      if (pegel > schwelle && jetzt - letzter > 320 && !App.spricht()) { letzter = jetzt; if (hoerer) { try { hoerer(); } catch (_) {} } }
+      spitze = Math.max(spitze, pegel);
+      const schwelle = Math.max(+App.stand.einst.klatschSchwelle || 0.35, mittel * 3);
+      if (pegel > schwelle && jetzt > letzter && !App.spricht()) {
+        letzter = jetzt + 320;
+        zahl++;
+        App.log(`Klatschen erkannt (Pegel ${Math.round(pegel * 100)}, Schwelle ${Math.round(schwelle * 100)})`);
+        if (hoerer) { try { hoerer(); } catch (_) {} }
+      }
       mittel = mittel * 0.95 + Math.min(pegel, 0.3) * 0.05;
     }
     async function starteIpad() {
@@ -228,20 +235,22 @@ const App = { VERSION: "0.9.0", inhalt: {}, aufgaben: {}, bilder: {} };
     }
     async function starteRoboter(mein) {
       if (!MBot.verbunden()) throw new Error("Roboter nicht verbunden");
-      await MBot.evalExpr("cyberpi.get_loudness()", 1500);   // antwortet der Sensor überhaupt?
+      await MBot.lautstaerke();   // antwortet der Sensor überhaupt?
       (async () => {
         while (mein === lauf && MBot.verbunden()) {
-          try { pruefe((+(await MBot.evalExpr("cyberpi.get_loudness()", 1000, true)) || 0) / 100); } catch (_) {}
-          await App.warte(40);
+          try { pruefe((await MBot.lautstaerke()) / 100); } catch (_) {}
+          await App.warte(8);
         }
       })();
     }
-    // Liefert true, wenn gehört wird. fn wird bei jedem erkannten Klatschen aufgerufen.
+    /* Liefert true, wenn gehört wird. fn wird bei jedem erkannten Klatschen aufgerufen.
+     * Einstellung „auto“: Ist der Roboter verbunden, hört sein Mikrofon, sonst das des iPads. */
     K.starte = async (fn) => {
       K.stoppe();
-      K.quelle = App.stand.einst.klatschen || "aus";
+      const wahl = App.stand.einst.klatschen || "auto";
+      K.quelle = wahl === "auto" ? (MBot.verbunden() ? "roboter" : "ipad") : wahl;
       if (K.quelle === "aus") return false;
-      hoerer = fn; mittel = 0.02;
+      hoerer = fn; mittel = 0.02; zahl = 0; spitze = 0; letzter = 0;
       const mein = ++lauf;
       try {
         if (K.quelle === "ipad") await starteIpad(); else await starteRoboter(mein);
@@ -250,16 +259,19 @@ const App = { VERSION: "0.9.0", inhalt: {}, aufgaben: {}, bilder: {} };
       } catch (e) {
         App.log(`Klatschen erkennen geht nicht (${K.quelle}): ${MBot.hilfen.errText(e)}`, "w");
         K.stoppe();
+        K.quelle = "aus";
         return false;
       }
     };
     K.stoppe = () => {
+      if (hoerer) App.log(`Klatschen: beendet, ${zahl} erkannt, höchster Pegel ${Math.round(spitze * 100)}`);
       hoerer = null; lauf++;
       clearInterval(uhr); uhr = 0;
       if (strom) { try { strom.getTracks().forEach((t) => t.stop()); } catch (_) {} strom = null; }
       K.pegel = 0;
     };
-    K.sperre = (ms = 350) => { letzter = performance.now() + ms - 320; };
+    // Für ms Millisekunden nichts zählen (z. B. solange der Roboter selbst piept oder fährt)
+    K.sperre = (ms = 350) => { letzter = Math.max(letzter, performance.now() + ms); };
     return K;
   })();
 

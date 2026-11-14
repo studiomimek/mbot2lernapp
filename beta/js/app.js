@@ -8,7 +8,7 @@
   const FUNDNAME = {
     muschel: "eine Muschel", seestern: "einen Seestern", perle: "eine Perle",
     stern: "einen Stern", planet: "einen Planeten", rakete: "eine kleine Rakete",
-    feder: "eine Papageienfeder", flasche: "eine Flaschenpost", muenze: "eine Goldmünze", komet: "einen Kometen",
+    feder: "eine Papageienfeder", flasche: "eine Flaschenpost", muenze: "eine Goldmünze", komet: "einen Kometen", zahnrad: "ein Zahnrad",
   };
   let lauf = null;   // laufende Aufgabe
 
@@ -60,10 +60,14 @@
       zaehle(n) { MBot.reaktion.zaehle(n); },
       tick() { if (ohneRoboter()) App.audio.ton(784, 0.12); },
       silbe(i) { roverStimmung("freu"); if (ohneRoboter()) App.audio.ton(880, 0.14); MBot.reaktion.silbe(i); },
+      blitz() { roverStimmung("freu"); App.audio.ton(880, 0.12); MBot.reaktion.blitz(); },   // leise Rückmeldung fürs Klatschen
+      knopf(rgb, ton) { if (ohneRoboter()) App.audio.ton(ton, 0.16); else MBot.reaktion.knopf(rgb[0], rgb[1], rgb[2], ton); },
       rakete() { roverStimmung("freu"); if (ohneRoboter()) App.audio.klang("rakete"); MBot.reaktion.rakete(); },
       // Eingabe über den Roboter
       roboter: () => MBot.verbunden(),
-      winken: (fn) => { if (MBot.verbunden()) MBot.beobachteHand(() => { if (lebt()) fn(); }, lebt); },
+      winken: (fn, wechsel = () => {}) => {
+        if (MBot.verbunden()) MBot.beobachteHand(() => { if (lebt()) { wechsel(true); fn(); } }, lebt, () => wechsel(false));
+      },
       hand: (maxMs, weiter = () => true) => (MBot.verbunden() ? MBot.warteAufHand(maxMs, () => lebt() && weiter()) : Promise.resolve(false)),
       fertig() { beende(true); },
       reise(ortId) { beende(false, ortId); },            // Aufgabe endet ohne Fundstück, weiter an einem anderen Ort
@@ -138,6 +142,44 @@
     f.classList.remove("aus");
     f.onclick = () => { f.classList.add("aus"); f.innerHTML = ""; App.still(); };
     App.sag(n === 0 ? "Deine Schatzkiste ist noch leer. Löse eine Aufgabe!" : n === 1 ? "Du hast schon ein Fundstück." : `Du hast schon ${n} Fundstücke.`);
+  }
+
+  /* ---------- Weltkarte: wächst mit den entdeckten Orten, Antippen springt dorthin ---------- */
+  function oeffneKarte() {
+    const W = App.inhalt.welt, k = $("#karte");
+    App.welt.halt();
+    const platz = (o) => [96 + o.karte[0] * 212, 140 + o.karte[1] * 186];   // linke obere Ecke der Kachel (168 × 126)
+    const mitte = (o) => { const [x, y] = platz(o); return [x + 84, y + 63]; };
+    let wege = "", knoten = "";
+    const weg = (a, b, gestrichelt) => {
+      if (!a.karte || !b || !b.karte) return;
+      const [x1, y1] = mitte(a), [x2, y2] = mitte(b);
+      wege += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"${gestrichelt ? ' stroke-dasharray="6 16"' : ""}/>`;
+    };
+    for (const [id, o] of Object.entries(W.orte)) {
+      if (!o.karte) continue;
+      for (const z of Object.values(o.nachbarn || {})) if (id < z) weg(o, W.orte[z], false);
+      for (const t of o.tore || []) weg(o, W.orte[t.ziel], true);
+      for (const e of o.einstiege || []) if (e.inhalt && e.inhalt.ziel) weg(o, W.orte[e.inhalt.ziel], true);
+      const [x, y] = platz(o), da = !!App.stand.besucht[id];
+      knoten += `<button class="karte-ort${da ? "" : " fremd"}${id === App.stand.ort ? " hier" : ""}" data-ort="${id}" style="left:${x}px;top:${y}px" aria-label="${o.name}">${da ? B[o.bild]() : "?"}</button>`;
+    }
+    k.innerHTML = `<svg class="karte-wege" viewBox="0 0 1024 768">${wege}</svg>${knoten}<button class="knopf karte-zu" aria-label="Karte schließen">${B.zurueck()}</button>`;
+    k.classList.remove("aus");
+    const zu = () => { k.classList.add("aus"); k.innerHTML = ""; };
+    $(".karte-zu", k).addEventListener("click", () => { App.audio.klang("tipp"); zu(); });
+    $$(".karte-ort", k).forEach((el) => el.addEventListener("click", () => {
+      const id = el.dataset.ort;
+      if (el.classList.contains("fremd")) {
+        el.classList.remove("wackel"); void el.offsetWidth; el.classList.add("wackel");
+        App.sag("Diesen Ort musst du erst entdecken.");
+        return;
+      }
+      App.audio.klang("neugierig");
+      zu();
+      if (id !== App.stand.ort) App.welt.zeige(id, { rein: "tor", ansage: W.orte[id].ansage });
+    }));
+    App.sag("Das ist deine Karte. Tippe an, wohin du möchtest.");
   }
 
   /* ---------- Roboter ---------- */
@@ -264,7 +306,7 @@
     $("#e-tempo").value = e.tempo; $("#e-tempo-wert").textContent = e.tempo;
     $("#e-laut").value = e.lautstaerke; $("#e-laut-wert").textContent = e.lautstaerke;
     $("#e-sprechtempo").value = e.sprechtempo; $("#e-sprechtempo-wert").textContent = e.sprechtempo;
-    $("#e-klatschen").value = e.klatschen || "aus";
+    $("#e-klatschen").value = e.klatschen || "auto";
     $("#e-klatsch-schwelle").value = e.klatschSchwelle; $("#e-klatsch-schwelle-wert").textContent = e.klatschSchwelle;
     $("#e-klatsch-anzeige").textContent = "";
     $("#e-status").textContent = statusText;
@@ -385,6 +427,7 @@
     $("#start-rover").innerHTML = B.rover();
     $("#btn-los").innerHTML = B.spielen();
     $("#btn-truhe").insertAdjacentHTML("afterbegin", B.truhe());
+    $("#btn-karte").innerHTML = B.karte();
     $("#btn-zurueck").innerHTML = B.zurueck();
     $("#btn-nochmal").innerHTML = B.lautsprecher();
     $("#btn-robo").insertAdjacentHTML("afterbegin", B.rover());
@@ -394,6 +437,7 @@
 
     $("#btn-los").addEventListener("click", los);
     $("#btn-truhe").addEventListener("click", () => { App.audio.klang("tipp"); oeffneTruhe(); });
+    $("#btn-karte").addEventListener("click", () => { App.audio.klang("tipp"); oeffneKarte(); });
     $("#btn-zurueck").addEventListener("click", () => { App.audio.klang("tipp"); beende(false); });
     $("#btn-nochmal").addEventListener("click", () => { if (lauf && lauf.wiederhole) lauf.wiederhole(); });
     $("#btn-robo").addEventListener("click", roboterKnopf);

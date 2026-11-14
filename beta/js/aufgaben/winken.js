@@ -23,13 +23,14 @@
       feld.innerHTML = `
         <div class="wk-zahl papier"></div>
         <div class="wk-sterne">${`<span class="wk-stern">${B.sternchen()}</span>`.repeat(10)}</div>
+        <div class="wk-auge" aria-hidden="true">👀</div>
         <button class="sb-klatsch wk-hand" aria-label="Einmal winken">✋</button>
         <button class="sb-start" aria-label="Fertig">✅</button>`;
       const sterne = $$(".wk-stern", feld);
       App.log(`Winken: Stufe ${stufenNr + 1} (${st.name})`);
 
       const frage = (lang) => ctx.sag(!lang ? `Winke ${ziel} mal.`
-        : ctx.roboter() ? `Der Satellit braucht ${ziel} Sterne. Winke ${ziel} mal vor den Augen vom Roboter. Dann tippe auf den Haken.`
+        : ctx.roboter() ? `Der Satellit braucht ${ziel} Sterne. Halte die Hand kurz dicht vor die Augen vom Roboter und nimm sie wieder weg. Mach das ${ziel} mal. Dann tippe auf den Haken.`
           : `Der Satellit braucht ${ziel} Sterne. Tippe ${ziel} mal auf die Hand. Dann tippe auf den Haken.`);
       ctx.wiederhole(() => { if (!gesperrt) frage(true); });
 
@@ -42,7 +43,10 @@
         ctx.zaehlton(gezaehlt);
       }
       $(".wk-hand", feld).addEventListener("click", winke);
-      ctx.winken(winke);   // Hand vor dem Roboter zählt genauso
+      // Hand vor dem Roboter zählt genauso. Die Augen leuchten, solange der Roboter die Hand sieht.
+      const auge = $(".wk-auge", feld);
+      auge.classList.toggle("aus", !ctx.roboter());
+      ctx.winken(winke, (nah) => auge.classList.toggle("an", nah));
 
       function neueRunde() {
         do { ziel = App.zufall(1, st.bis); } while (ziel === letzte);

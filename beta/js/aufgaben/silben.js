@@ -71,6 +71,7 @@
         baueRakete();
         ctx.runde(runde, runden);
         ctx.zeige("?");
+        App.klatschen.sperre(1500);      // der Roboter zwitschert und ruckt gerade noch
         gesperrt = false;
         frage(runde === 0);
       }
@@ -84,7 +85,10 @@
         const teil = document.createElement("div");
         teil.className = "sb-teil";
         rakete.insertBefore(teil, $(".sb-spitze", rakete));
-        ctx.silbe(getippt - 1);
+        // Hört das Mikrofon des Roboters zu, bleibt er still (nur ein Lichtblitz): Sein eigener Ton
+        // und seine Motoren würden sonst als weiteres Klatschen gezählt.
+        if (App.klatschen.quelle === "roboter") { App.klatschen.sperre(450); ctx.blitz(); }
+        else ctx.silbe(getippt - 1);
       }
       klatsch.addEventListener("click", klatsche);
       App.klatschen.starte(klatsche).then((hoert) => { if (ctx.lebt()) klatsch.classList.toggle("hoert", hoert); else App.klatschen.stoppe(); });
@@ -142,6 +146,7 @@
         if (!ctx.lebt()) return;
         if (!(await sprichSilben(false))) return;
         baueRakete();
+        App.klatschen.sperre(1500);
         gesperrt = false;
         ctx.sag(`Jetzt du: ${wort}.`);
       }

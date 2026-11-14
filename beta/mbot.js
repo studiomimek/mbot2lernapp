@@ -7,7 +7,7 @@
 "use strict";
 
 const MBot = (() => {
-  const VERSION = "0.9.0";
+  const VERSION = "0.10.0";
 
   /* ---------- Konstanten: Makeblock Live-Mode-Protokoll (f3/f4) ---------- */
   const uuid16 = (x) => `0000${x}-0000-1000-8000-00805f9b34fb`;
@@ -255,6 +255,7 @@ const MBot = (() => {
       log("Bereit. Roboter sollte kurz blau leuchten und piepen.", "r");
       await pruefeFein();
       setStatus("on", `Verbunden: ${device.name || "mBot2"}`);
+      pruefeFaehigkeiten();
       return true;
     } catch (e) {
       if (e && e.name === "NotFoundError") { log("Suche abgebrochen oder kein Gerät gewählt.", "w"); setStatus("", "Nicht verbunden"); }
@@ -311,17 +312,42 @@ const MBot = (() => {
     if (bot.connected) await run("mbot2.EM_stop()");
   }
 
-  /* Beobachtet den Ultraschallsensor dauerhaft und meldet jedes Mal, wenn eine Hand NEU davor auftaucht
-   * (für „Winken zählen“). Läuft, bis weiter() false liefert oder die Verbindung endet. */
-  async function beobachteHand(beiNah, weiter = () => true) {
-    let nah = false;
+  /* Beobachtet den Ultraschallsensor dauerhaft (für „Winken zählen“).
+   * beiNah wird jedes Mal gerufen, wenn eine Hand NEU vor den Sensor kommt, beiWeg, wenn sie wieder weg ist.
+   * „Nah“ heißt: deutlich näher als der freie Abstand ohne Hand (höchstens 35 cm). Der freie Abstand wird
+   * laufend mitgelernt, damit es auch funktioniert, wenn der Roboter vor einer Wand steht.
+   * Abgefragt wird so schnell es Bluetooth erlaubt (etwa 15-mal pro Sekunde). */
+  async function beobachteHand(beiNah, weiter = () => true, beiWeg = () => {}) {
+    let nah = false, frei = 300;
     while (bot.connected && weiter()) {
       let d = NaN;
       try { d = +(await evalExpr("cyberpi.ultrasonic2.get(1)", 1000, true)); } catch (_) {}
-      if (d > 0 && d < 16) { if (!nah) { nah = true; try { beiNah(d); } catch (_) {} } }
-      else if (!(d > 0) || d > 24) nah = false;
-      await sleep(70);
+      if (d > 0) {
+        const grenze = Math.min(35, frei * 0.6);
+        if (!nah && d < grenze) { nah = true; try { beiNah(d); } catch (_) {} }
+        else if (nah && d > grenze * 1.25 + 3) { nah = false; try { beiWeg(); } catch (_) {} }
+        if (!nah) frei = frei * 0.8 + Math.min(d, 300) * 0.2;
+      }
+      await sleep(12);
     }
+    if (nah) { try { beiWeg(); } catch (_) {} }
+  }
+
+  /* ---------- Was kann dieser Roboter? (wird nach dem Verbinden im Hintergrund geprüft und protokolliert) ----------
+   * spitze: Lautstärke-Spitze über etwa 50 ms in EINEM Befehl. Ohne das fällt ein kurzes Klatschen
+   *         oft genau zwischen zwei Abfragen und wird nicht bemerkt.
+   * tasten: Tasten A/B und Joystick des CyberPi (für spätere Spiele, bisher nur protokolliert). */
+  const SPITZE = "max([(__import__('time').sleep_ms(6),cyberpi.get_loudness())[1] for _ in range(8)])";
+  const TASTEN = "[cyberpi.controller.is_press(k) for k in ('a','b','up','down','left','right','middle')]";
+  const faehig = { spitze: false, tasten: false };
+  async function pruefeFaehigkeiten() {
+    try { faehig.spitze = typeof (await evalExpr(SPITZE, 2500, true)) === "number"; } catch (_) { faehig.spitze = false; }
+    try { faehig.tasten = Array.isArray(await evalExpr(TASTEN, 2500, true)); } catch (_) { faehig.tasten = false; }
+    log(`Fähigkeiten des Roboters: Lautstärke-Spitze ${faehig.spitze ? "ja" : "nein"}, Tasten/Joystick ${faehig.tasten ? "ja" : "nein"}`, "r");
+  }
+  // Lautstärke am Roboter-Mikrofon, 0 bis 100
+  async function lautstaerke() {
+    return +(await evalExpr(faehig.spitze ? SPITZE : "cyberpi.get_loudness()", 1500, true)) || 0;
   }
 
   /* ---------- Dauerfahrt (Steuerknüppel, Mitfahren in der Welt) ----------
@@ -507,6 +533,17 @@ const MBot = (() => {
       if (!gestoppt(ep)) await run(grund());
     }),
 
+    // Stiller Lichtblitz (kein Ton, keine Bewegung: stört das Mikrofon nicht)
+    blitz: (r = 255, g = 200, b = 0) => { const p = still(`cyberpi.led.on(${r | 0},${g | 0},${b | 0})`); setTimeout(() => still(grund()), 220); return p; },
+
+    // Knopf im Raketen-Cockpit: Licht in der Farbe des Knopfes und ein kurzer Ton
+    knopf: alsReaktion("knopf", async (ep, r, g, b, ton = 880) => {
+      await run(`cyberpi.led.on(${r | 0},${g | 0},${b | 0})`);
+      await tones([[ton, 0.08]], ep);
+      await sleep(250);
+      if (!gestoppt(ep)) await run(grund());
+    }),
+
     // Etwas entdeckt: weißes Licht, kurzes Zwitschern, Zappeln
     staunen: alsReaktion("staunen", async (ep) => {
       await run("cyberpi.led.on(255,255,255)");
@@ -573,7 +610,7 @@ const MBot = (() => {
     verbunden: () => bot.connected,
     verbinde, trenne,
     run, evalExpr,
-    move, tones, stopp, warteAufHand, beobachteHand,
+    move, tones, stopp, warteAufHand, beobachteHand, lautstaerke, faehig,
     fahre, pruefeFein, aufnahme,
     kannFein: () => !!fein,
     epoche: () => epoche,

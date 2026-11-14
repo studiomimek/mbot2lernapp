@@ -135,39 +135,41 @@
   B.spielen = () => svg("0 0 100 100", `<path d="M36 24 L78 50 L36 76Z" fill="${F.papier}" stroke="${F.papier}" stroke-width="10" stroke-linejoin="round"/>`);
 
   /* ---------- Orte ---------- */
+  // Strand: Horizont weit oben, darunter viel Sand zum Fahren
   B.strand = () => svg("0 0 1024 768", `
     <rect width="1024" height="768" fill="${F.himmel}"/>
-    <circle cx="850" cy="112" r="96" fill="#fff" opacity=".35"/><circle cx="850" cy="112" r="64" fill="${F.sonne}"/>
-    <g fill="#fff" opacity=".92">
-      <ellipse cx="230" cy="100" rx="84" ry="27"/><ellipse cx="282" cy="80" rx="54" ry="27"/>
-      <ellipse cx="560" cy="170" rx="66" ry="20"/><ellipse cx="600" cy="154" rx="42" ry="20"/>
+    <circle cx="860" cy="84" r="78" fill="#fff" opacity=".35"/><circle cx="860" cy="84" r="50" fill="${F.sonne}"/>
+    <g fill="#fff" opacity=".92"><ellipse cx="230" cy="70" rx="76" ry="22"/><ellipse cx="278" cy="54" rx="48" ry="22"/><ellipse cx="560" cy="110" rx="58" ry="17"/><ellipse cx="596" cy="98" rx="36" ry="16"/></g>
+    <g stroke="${F.tinte}" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M392 60 q9 -10 18 0 q9 -10 18 0"/><path d="M450 96 q7 -8 14 0 q7 -8 14 0"/><path d="M690 52 q8 -9 16 0 q8 -9 16 0"/></g>
+    <rect y="186" width="1024" height="160" fill="${F.meer}"/>
+    <g transform="translate(0 -76)">
+      <g fill="${F.tief}" opacity=".6"><path d="M610 262 Q680 206 772 232 Q850 210 930 262 Z"/><path d="M755 238 V192 Q755 166 768 150 Q781 166 781 192 V238 Z"/><path d="M755 212 L738 240 H755Z M781 212 L798 240 H781Z"/></g>
+      <circle cx="768" cy="190" r="6" fill="${F.meer2}" opacity=".7"/>
     </g>
-    <rect y="262" width="1024" height="220" fill="${F.meer}"/>
-    <g fill="${F.tief}" opacity=".6">
-      <path d="M610 262 Q680 206 772 232 Q850 210 930 262 Z"/>
-      <path d="M755 238 V192 Q755 166 768 150 Q781 166 781 192 V238 Z"/>
-      <path d="M755 212 L738 240 H755Z M781 212 L798 240 H781Z"/>
+    <path d="M300 226 h64 l-12 16 h-40z" fill="${F.papier}"/><path d="M332 222 V176 L366 222Z" fill="${F.koralle}"/><path d="M328 222 V184 L304 222Z" fill="${F.papier}"/>
+    <path d="${welle(232, 10)} V262 H0Z" fill="${F.meer2}" opacity=".5"/>
+    <path d="${welle(276, 12)} V320 H0Z" fill="${F.meer2}" opacity=".85"/>
+    <path d="M0 318 Q180 286 400 306 T800 298 T1024 310 V768 H0Z" fill="${F.sand2}"/>
+    <path d="M0 344 Q200 314 420 334 T820 326 T1024 338 V768 H0Z" fill="${F.sand}"/>
+    <g transform="translate(0 -112)">
+      <path d="M98 500 Q82 400 122 306 L144 312 Q114 400 130 500Z" fill="${F.holz}"/><ellipse cx="114" cy="502" rx="44" ry="13" fill="${F.sand2}"/>
+      <g fill="${F.blatt}"><path d="M132 308 Q60 252 6 296 Q70 284 132 308Z"/><path d="M132 308 Q92 222 28 218 Q92 248 132 308Z"/><path d="M132 308 Q154 222 228 210 Q174 250 132 308Z"/><path d="M132 308 Q214 256 268 302 Q198 286 132 308Z"/></g>
+      <path d="M132 308 Q118 236 152 190 Q154 254 132 308Z" fill="${F.blatt2}"/>
+      <circle cx="126" cy="312" r="10" fill="${F.holz2}"/><circle cx="142" cy="318" r="9" fill="${F.holz2}"/>
     </g>
-    <circle cx="768" cy="190" r="6" fill="${F.meer2}" opacity=".7"/>
-    <path d="${welle(308, 14)} V350 H0Z" fill="${F.meer2}" opacity=".5"/>
-    <path d="${welle(368, 16)} V420 H0Z" fill="${F.meer2}" opacity=".8"/>
-    <path d="M0 436 Q180 396 400 422 T800 414 T1024 428 V768 H0Z" fill="${F.sand2}"/>
-    <path d="M0 462 Q200 428 420 452 T820 444 T1024 456 V768 H0Z" fill="${F.sand}"/>
-    <g fill="${F.sand2}">
-      <circle cx="520" cy="560" r="5"/><circle cx="560" cy="604" r="4"/><circle cx="468" cy="630" r="5"/><circle cx="904" cy="640" r="5"/>
-      <circle cx="78" cy="610" r="5"/><circle cx="610" cy="500" r="4"/><circle cx="420" cy="508" r="4"/>
-    </g>
-    <path d="M98 500 Q82 400 122 306 L144 312 Q114 400 130 500Z" fill="${F.holz}"/>
-    <ellipse cx="114" cy="502" rx="44" ry="13" fill="${F.sand2}"/>
-    <g fill="${F.blatt}">
-      <path d="M132 308 Q60 252 6 296 Q70 284 132 308Z"/><path d="M132 308 Q92 222 28 218 Q92 248 132 308Z"/>
-      <path d="M132 308 Q154 222 228 210 Q174 250 132 308Z"/><path d="M132 308 Q214 256 268 302 Q198 286 132 308Z"/>
-    </g>
-    <path d="M132 308 Q118 236 152 190 Q154 254 132 308Z" fill="${F.blatt2}"/>
-    <path d="M866 520 Q884 478 934 488 Q986 498 990 540 Q934 558 866 542Z" fill="${F.stein}"/>
-    <path d="M916 532 Q928 506 958 512 Q984 520 986 544 Q950 552 916 546Z" fill="#a39378"/>
-    <path d="M0 694 Q130 664 260 688 T520 680 T780 692 T1024 674 V768 H0Z" fill="${F.meer2}"/>
-    <path d="M0 724 Q140 704 280 722 T560 716 T840 726 T1024 710 V768 H0Z" fill="${F.meer}"/>`);
+    <g transform="translate(0 -120)"><path d="M866 520 Q884 478 934 488 Q986 498 990 540 Q934 558 866 542Z" fill="${F.stein}"/><path d="M916 532 Q928 506 958 512 Q984 520 986 544 Q950 552 916 546Z" fill="#a39378"/></g>
+    <!-- Sandburg -->
+    <g><rect x="522" y="352" width="76" height="40" fill="${F.sand3}"/><rect x="514" y="330" width="24" height="62" fill="${F.sand2}"/><rect x="582" y="330" width="24" height="62" fill="${F.sand2}"/><rect x="548" y="318" width="24" height="74" fill="${F.sand2}"/>
+      <path d="M514 330 h6 v-7 h6 v7 h6 v-7 h6 v7 M582 330 h6 v-7 h6 v7 h6 v-7 h6 v7 M548 318 h6 v-7 h6 v7 h6 v-7 h6 v7" stroke="${F.sand2}" stroke-width="6" fill="none"/>
+      <path d="M552 392 v-22 q8 -8 16 0 v22z" fill="${F.holz2}"/><path d="M560 318 V288" stroke="${F.holz2}" stroke-width="4"/><path d="M560 288 L584 296 L560 304Z" fill="${F.koralle}"/></g>
+    <!-- Kleinkram im Sand -->
+    <g transform="translate(900 610) scale(.5)">${teil.seestern()}</g>
+    <g transform="translate(620 650) scale(.34)">${teil.muschel()}</g><g transform="translate(60 600) scale(.3) rotate(-20)">${teil.muschel()}</g>
+    <circle cx="238" cy="430" r="26" fill="${F.papier}"/><path d="M238 404 A26 26 0 0 1 264 430 L238 430Z" fill="${F.koralle}"/><path d="M238 456 A26 26 0 0 1 212 430 L238 430Z" fill="${F.meer}"/>
+    <g fill="${F.sand2}"><ellipse cx="660" cy="470" rx="9" ry="6"/><ellipse cx="690" cy="488" rx="9" ry="6"/><ellipse cx="664" cy="508" rx="9" ry="6"/><ellipse cx="694" cy="526" rx="9" ry="6"/>
+      <circle cx="420" cy="430" r="5"/><circle cx="820" cy="560" r="5"/><circle cx="330" cy="660" r="4"/><circle cx="500" cy="600" r="5"/><circle cx="960" cy="470" r="4"/><circle cx="130" cy="520" r="5"/></g>
+    <path d="M0 704 Q130 676 260 698 T520 690 T780 702 T1024 686 V768 H0Z" fill="${F.meer2}"/>
+    <path d="M0 732 Q140 714 280 730 T560 724 T840 734 T1024 720 V768 H0Z" fill="${F.meer}"/>`);
 
   B.riff = () => svg("0 0 1024 768", `
     <rect width="1024" height="768" fill="${F.riff}"/>
@@ -245,24 +247,35 @@
     <ellipse cx="50" cy="52" rx="46" ry="11" fill="none" stroke="#f59a3c" stroke-width="7" transform="rotate(-16 50 52)"/>`);
   B.rakete = () => svg("-50 0 200 200", teil.rakete());
 
+  // Raketenstation: Gebäude und Rakete stehen weit hinten, davor viel Platz zum Fahren
   B.station = () => svg("0 0 1024 768", `
     <rect width="1024" height="768" fill="${N.nacht}"/>
-    ${sterne([[60, 60, 3], [140, 230, 2], [262, 84, 2.5], [330, 190, 2], [420, 50, 3], [690, 96, 2], [752, 190, 3], [800, 56, 2], [900, 140, 2.5], [980, 240, 2], [90, 300, 2], [960, 60, 3], [300, 290, 2], [730, 300, 2]])}
-    <circle cx="172" cy="132" r="60" fill="#fff3c9"/><circle cx="150" cy="116" r="13" fill="#ecdca6"/><circle cx="190" cy="154" r="9" fill="#ecdca6"/><circle cx="196" cy="106" r="6" fill="#ecdca6"/>
-    <path d="M0 372 Q170 318 340 356 T680 340 T1024 352 V768 H0Z" fill="${N.nacht2}"/>
-    <path d="M70 456 V392 Q70 330 160 330 Q250 330 250 392 V456Z" fill="${N.bau}"/>
-    <rect x="96" y="382" width="34" height="26" rx="5" fill="${F.sonne}"/><rect x="143" y="382" width="34" height="26" rx="5" fill="${F.sonne}"/><rect x="190" y="382" width="34" height="26" rx="5" fill="${F.sonne}"/>
-    <rect x="156" y="298" width="8" height="36" fill="${N.stahl}"/><circle cx="160" cy="294" r="8" fill="${F.koralle}"/>
-    <rect x="876" y="340" width="12" height="116" fill="${N.stahl}"/>
-    <g transform="rotate(-32 882 332)"><path d="M822 332 Q882 392 942 332Z" fill="${N.bau}"/><rect x="879" y="296" width="6" height="40" fill="${N.stahl}"/><circle cx="882" cy="294" r="7" fill="${F.koralle}"/></g>
-    <path d="M0 448 Q200 424 420 442 T820 434 T1024 446 V768 H0Z" fill="${N.boden}"/>
-    <path d="M0 492 Q220 470 440 486 T840 478 T1024 488 V768 H0Z" fill="${N.boden2}"/>
-    <ellipse cx="560" cy="462" rx="160" ry="22" fill="${N.platz}"/>
-    <rect x="444" y="150" width="22" height="312" fill="${N.stahl}"/>
-    <path d="M444 190 L466 230 M466 190 L444 230 M444 270 L466 310 M466 270 L444 310 M444 350 L466 390 M466 350 L444 390" stroke="${N.platz}" stroke-width="4"/>
-    <rect x="466" y="250" width="48" height="10" fill="${N.stahl}"/>
-    <g transform="translate(470 100) scale(1.8)">${teil.rakete()}</g>
-    <g fill="${N.boden}"><ellipse cx="170" cy="700" rx="48" ry="10"/><ellipse cx="700" cy="712" rx="60" ry="11"/><ellipse cx="936" cy="668" rx="34" ry="8"/></g>`);
+    ${sterne([[60, 50, 3], [250, 40, 2], [330, 130, 2], [400, 60, 3], [690, 70, 2], [752, 150, 3], [800, 40, 2], [900, 110, 2.5], [980, 190, 2], [36, 190, 2], [960, 40, 3], [300, 200, 2], [620, 170, 2]])}
+    <circle cx="320" cy="92" r="52" fill="#fff3c9"/><circle cx="302" cy="78" r="11" fill="#ecdca6"/><circle cx="336" cy="110" r="8" fill="#ecdca6"/><circle cx="342" cy="70" r="5" fill="#ecdca6"/>
+    <path d="M0 252 Q170 206 340 236 T680 222 T1024 232 V768 H0Z" fill="${N.nacht2}"/>
+    <path d="M0 300 Q200 280 420 294 T820 288 T1024 298 V768 H0Z" fill="${N.boden}"/>
+    <path d="M0 338 Q220 320 440 332 T840 326 T1024 334 V768 H0Z" fill="${N.boden2}"/>
+    <g transform="translate(0 -140)">
+      <path d="M70 456 V392 Q70 330 160 330 Q250 330 250 392 V456Z" fill="${N.bau}"/>
+      <rect x="96" y="382" width="34" height="26" rx="5" fill="${F.sonne}"/><rect x="143" y="382" width="34" height="26" rx="5" fill="${F.sonne}"/><rect x="190" y="382" width="34" height="26" rx="5" fill="${F.sonne}"/>
+      <rect x="142" y="420" width="36" height="36" rx="4" fill="${N.platz}"/>
+      <rect x="156" y="298" width="8" height="36" fill="${N.stahl}"/><circle cx="160" cy="294" r="8" fill="${F.koralle}"/>
+      <rect x="876" y="340" width="12" height="116" fill="${N.stahl}"/>
+      <g transform="rotate(-32 882 332)"><path d="M822 332 Q882 392 942 332Z" fill="${N.bau}"/><rect x="879" y="296" width="6" height="40" fill="${N.stahl}"/><circle cx="882" cy="294" r="7" fill="${F.koralle}"/></g>
+    </g>
+    <ellipse cx="560" cy="330" rx="136" ry="18" fill="${N.platz}"/>
+    <rect x="470" y="86" width="18" height="244" fill="${N.stahl}"/>
+    <path d="M470 116 L488 150 M488 116 L470 150 M470 186 L488 220 M488 186 L470 220 M470 256 L488 290 M488 256 L470 290" stroke="${N.platz}" stroke-width="3.5"/>
+    <rect x="488" y="160" width="26" height="8" fill="${N.stahl}"/>
+    <g transform="translate(490 44) scale(1.4)">${teil.rakete()}</g>
+    <!-- Lampen, Kisten, Markierungen -->
+    <g><rect x="326" y="270" width="8" height="64" fill="${N.stahl}"/><circle cx="330" cy="266" r="12" fill="${F.sonne}"/><circle cx="330" cy="266" r="24" fill="${F.sonne}" opacity=".2"/>
+      <rect x="766" y="270" width="8" height="64" fill="${N.stahl}"/><circle cx="770" cy="266" r="12" fill="${F.sonne}"/><circle cx="770" cy="266" r="24" fill="${F.sonne}" opacity=".2"/></g>
+    <g><rect x="268" y="296" width="36" height="30" rx="4" fill="${F.holz}"/><rect x="290" y="270" width="30" height="28" rx="4" fill="${F.holz2}"/></g>
+    <path d="M560 356 V748" stroke="${N.boden}" stroke-width="10" stroke-dasharray="34 30"/>
+    <path d="M60 470 H330 M700 470 H980" stroke="${N.boden}" stroke-width="6" stroke-dasharray="24 22"/>
+    <g fill="${N.boden}"><ellipse cx="170" cy="700" rx="48" ry="10"/><ellipse cx="700" cy="716" rx="60" ry="11"/><ellipse cx="936" cy="640" rx="34" ry="8"/><ellipse cx="300" cy="420" rx="30" ry="7"/><ellipse cx="880" cy="520" rx="40" ry="9"/></g>
+    <g fill="${F.koralle}"><path d="M630 372 l12 26 h-24z"/><path d="M486 372 l12 26 h-24z"/></g>`);
 
   B.stationNah = () => svg("0 0 1024 768", `
     <rect width="1024" height="768" fill="${N.nacht}"/>
@@ -302,27 +315,38 @@
   B.feder = () => svg("0 0 100 100", `<path d="M22 84 Q20 40 60 12 Q88 30 70 60 Q56 80 22 84Z" fill="${F.koralle}"/><path d="M34 70 Q40 44 60 12 Q64 44 34 70Z" fill="${F.sonne}"/><path d="M14 92 Q30 62 58 22" stroke="${F.tinte}" stroke-width="4" fill="none" stroke-linecap="round"/>`);
   B.flasche = () => svg("0 0 100 100", `<g transform="rotate(-28 50 50)"><rect x="40" y="6" width="20" height="24" rx="4" fill="#9fd9c2"/><rect x="43" y="2" width="14" height="9" rx="3" fill="${F.holz}"/><path d="M40 28 Q24 36 24 52 V86 Q24 94 34 94 H66 Q76 94 76 86 V52 Q76 36 60 28Z" fill="#b9e8d6"/><rect x="38" y="46" width="24" height="36" rx="5" fill="${F.papier}"/><path d="M38 58 H62 M38 70 H62" stroke="${F.koralle}" stroke-width="4"/></g>`);
 
+  // Pirateninsel: Schiff weit hinten auf dem Meer, davor die große Insel
   B.pirateninsel = () => svg("0 0 1024 768", `
     <rect width="1024" height="768" fill="${P.abend}"/>
-    <circle cx="230" cy="236" r="100" fill="#fff" opacity=".3"/><circle cx="230" cy="236" r="68" fill="${P.abendsonne}"/>
-    <g fill="#fff" opacity=".85"><ellipse cx="470" cy="96" rx="80" ry="24"/><ellipse cx="520" cy="78" rx="50" ry="24"/><ellipse cx="860" cy="70" rx="60" ry="18"/></g>
-    <rect y="262" width="1024" height="250" fill="${P.see}"/>
-    <path d="${welle(304, 14)} V346 H0Z" fill="${F.meer2}" opacity=".45"/>
-    <rect x="700" y="96" width="13" height="250" fill="${F.holz2}"/><rect x="852" y="136" width="13" height="210" fill="${F.holz2}"/>
-    <path d="M640 150 Q706 128 772 150 L764 292 Q706 272 648 292Z" fill="${F.papier}"/>
-    <path d="M806 180 Q858 162 910 180 L904 292 Q858 276 812 292Z" fill="${F.papier}"/>
-    <path d="M713 96 L776 112 L713 132Z" fill="${F.tinte}"/><circle cx="734" cy="112" r="7" fill="${F.papier}"/>
-    <path d="M592 330 Q612 432 700 442 H904 Q966 430 986 320 Z" fill="${F.holz2}"/>
-    <path d="M592 330 H986 L980 356 H598Z" fill="${F.holz}"/>
-    <g fill="${F.sonne}"><circle cx="676" cy="392" r="11"/><circle cx="756" cy="398" r="11"/><circle cx="836" cy="398" r="11"/><circle cx="912" cy="388" r="11"/></g>
-    <path d="${welle(418, 14)} V470 H0Z" fill="${F.meer2}" opacity=".85"/>
-    <path d="M0 478 Q170 438 390 462 T770 478 T1024 506 V768 H0Z" fill="${F.sand2}"/>
-    <path d="M0 508 Q200 470 420 492 T800 508 T1024 534 V768 H0Z" fill="${F.sand}"/>
-    <path d="M70 540 Q58 450 92 366 L112 372 Q86 452 100 540Z" fill="${F.holz}"/>
-    <g fill="${F.blatt}"><path d="M102 368 Q40 320 0 356 Q50 346 102 368Z"/><path d="M102 368 Q70 296 14 292 Q68 318 102 368Z"/><path d="M102 368 Q122 296 186 286 Q140 320 102 368Z"/><path d="M102 368 Q170 324 216 362 Q158 350 102 368Z"/></g>
+    <circle cx="230" cy="160" r="92" fill="#fff" opacity=".3"/><circle cx="230" cy="160" r="60" fill="${P.abendsonne}"/>
+    <g fill="#fff" opacity=".85"><ellipse cx="470" cy="70" rx="76" ry="22"/><ellipse cx="518" cy="54" rx="46" ry="22"/><ellipse cx="60" cy="60" rx="50" ry="15"/></g>
+    <rect y="186" width="1024" height="160" fill="${P.see}"/>
+    <path d="${welle(226, 10)} V256 H0Z" fill="${F.meer2}" opacity=".45"/>
+    <g transform="translate(250 -40) scale(.72)">
+      <rect x="700" y="96" width="13" height="250" fill="${F.holz2}"/><rect x="852" y="136" width="13" height="210" fill="${F.holz2}"/>
+      <path d="M640 150 Q706 128 772 150 L764 292 Q706 272 648 292Z" fill="${F.papier}"/><path d="M806 180 Q858 162 910 180 L904 292 Q858 276 812 292Z" fill="${F.papier}"/>
+      <path d="M660 200 Q706 188 754 200 M656 244 Q706 230 758 244" stroke="${F.sand2}" stroke-width="4" fill="none"/>
+      <path d="M713 96 L776 112 L713 132Z" fill="${F.tinte}"/><circle cx="734" cy="112" r="7" fill="${F.papier}"/>
+      <path d="M592 330 Q612 432 700 442 H904 Q966 430 986 320 Z" fill="${F.holz2}"/><path d="M592 330 H986 L980 356 H598Z" fill="${F.holz}"/>
+      <g fill="${F.sonne}"><circle cx="676" cy="392" r="11"/><circle cx="756" cy="398" r="11"/><circle cx="836" cy="398" r="11"/><circle cx="912" cy="388" r="11"/></g>
+    </g>
+    <path d="${welle(280, 12)} V326 H0Z" fill="${F.meer2}" opacity=".85"/>
+    <path d="M0 316 Q170 284 390 304 T770 316 T1024 334 V768 H0Z" fill="${F.sand2}"/>
+    <path d="M0 344 Q200 314 420 332 T800 344 T1024 360 V768 H0Z" fill="${F.sand}"/>
+    <path d="M690 318 L760 280 L772 290 L706 330Z" fill="${F.holz}"/>
+    <g transform="translate(0 -150)">
+      <path d="M70 540 Q58 450 92 366 L112 372 Q86 452 100 540Z" fill="${F.holz}"/>
+      <g fill="${F.blatt}"><path d="M102 368 Q40 320 0 356 Q50 346 102 368Z"/><path d="M102 368 Q70 296 14 292 Q68 318 102 368Z"/><path d="M102 368 Q122 296 186 286 Q140 320 102 368Z"/><path d="M102 368 Q170 324 216 362 Q158 350 102 368Z"/></g>
+    </g>
+    <g transform="translate(900 250) scale(.6)"><path d="M70 540 Q58 450 92 366 L112 372 Q86 452 100 540Z" fill="${F.holz}"/><g fill="${F.blatt2}"><path d="M102 368 Q40 320 0 356 Q50 346 102 368Z"/><path d="M102 368 Q70 296 14 292 Q68 318 102 368Z"/><path d="M102 368 Q122 296 186 286 Q140 320 102 368Z"/><path d="M102 368 Q170 324 216 362 Q158 350 102 368Z"/></g></g>
+    <!-- Piratenflagge, Fass, Schatzkiste, Schatzkreuz -->
+    <rect x="486" y="300" width="8" height="96" fill="${F.holz2}"/><path d="M494 302 L560 318 L494 340Z" fill="${F.tinte}"/><circle cx="514" cy="320" r="7" fill="${F.papier}"/>
     <g><rect x="118" y="596" width="64" height="76" rx="12" fill="${F.holz}"/><path d="M118 618 H182 M118 650 H182" stroke="${F.holz2}" stroke-width="6"/></g>
+    <g transform="translate(866 394) scale(.74)">${teil.truhe()}</g>
     <path d="M736 656 l44 44 m0 -44 l-44 44" stroke="${F.koralle}" stroke-width="12" stroke-linecap="round"/>
-    <g fill="${F.sand2}"><circle cx="420" cy="560" r="5"/><circle cx="560" cy="700" r="5"/><circle cx="900" cy="600" r="4"/><circle cx="250" cy="700" r="5"/></g>
+    <path d="M560 470 q30 -24 60 0 t60 0 t60 30" stroke="${F.sand2}" stroke-width="5" fill="none" stroke-dasharray="4 14" stroke-linecap="round"/>
+    <g transform="translate(300 690) scale(.3)">${teil.muschel()}</g><g transform="translate(960 600) scale(.4)">${teil.seestern()}</g>
+    <g fill="${F.sand2}"><circle cx="420" cy="430" r="5"/><circle cx="560" cy="700" r="5"/><circle cx="900" cy="560" r="4"/><circle cx="250" cy="480" r="5"/><circle cx="660" cy="410" r="4"/></g>
     <path d="M0 734 Q140 714 280 732 T560 726 T840 736 T1024 720 V768 H0Z" fill="${P.see}"/>`);
 
   B.wrack = () => svg("0 0 1024 768", `
@@ -421,4 +445,41 @@
     <rect x="117" y="10" width="6" height="26" fill="${N.stahl}"/><circle cx="120" cy="10" r="8" fill="${F.koralle}"/>`);
 
   B.figurLandung = () => svg("-30 0 160 204", `<ellipse cx="50" cy="196" rx="74" ry="8" fill="#fff" opacity=".15"/>${teil.rakete()}`);
+  /* ---------- Zusätzliche Details für Riff, Wrack, Weltraum und Rakete ---------- */
+  const kleinerFisch = (x, y, s, farbe, gespiegelt) => `<g style="color:${farbe}" transform="translate(${x} ${y}) scale(${gespiegelt ? -s : s} ${s})" opacity=".9">${teil.fisch()}</g>`;
+  const DETAIL = {
+    riff: `${kleinerFisch(700, 180, 0.45, "#f9c23c")}${kleinerFisch(760, 210, 0.38, "#f9c23c")}${kleinerFisch(120, 240, 0.5, "#f48fb1", true)}${kleinerFisch(880, 380, 0.42, "#b9e36b")}
+      <g transform="translate(330 690) scale(.42)">${teil.seestern()}</g><g transform="translate(700 700) scale(.3)">${teil.muschel()}</g><g transform="translate(440 706) scale(.26) rotate(20)">${teil.muschel()}</g>
+      <g stroke="${F.koralle}" stroke-width="12" stroke-linecap="round" fill="none"><path d="M420 690 V650 M420 672 L402 648 M420 676 L440 652"/></g>
+      <g stroke="#f59a3c" stroke-width="12" stroke-linecap="round" fill="none"><path d="M664 694 V660 M664 678 L648 658 M664 680 L682 660"/></g>
+      <g fill="#fff" opacity=".45"><circle cx="500" cy="200" r="6"/><circle cx="512" cy="170" r="4"/><circle cx="880" cy="250" r="5"/><circle cx="210" cy="150" r="5"/></g>`,
+    wrack: `${kleinerFisch(260, 200, 0.45, "#f9c23c")}${kleinerFisch(320, 180, 0.36, "#f9c23c")}${kleinerFisch(940, 250, 0.5, "#f0715b", true)}
+      <g fill="none" stroke="#9aa7ad" stroke-width="7"><circle cx="196" cy="660" r="11"/><circle cx="214" cy="674" r="11"/><circle cx="234" cy="684" r="11"/></g>
+      <g transform="translate(520 660) scale(.3)">${teil.muenze()}</g><g transform="translate(552 676) scale(.26)">${teil.muenze()}</g><g transform="translate(950 690) scale(.26)">${teil.muenze()}</g>
+      <g transform="translate(420 690) scale(.36)">${teil.seestern()}</g>
+      <path d="M388 470 l30 -8 M410 540 l34 -6 M760 380 l40 -8 M700 560 l36 -6" stroke="${F.holz2}" stroke-width="6" stroke-linecap="round"/>`,
+    weltraum: `<circle cx="470" cy="470" r="26" fill="${F.koralle}"/><path d="M448 462 Q470 452 492 462 Q470 468 448 462Z" fill="#c9503e"/>
+      <circle cx="930" cy="120" r="18" fill="#7fc8a9"/><ellipse cx="930" cy="122" rx="30" ry="7" fill="none" stroke="#f59a3c" stroke-width="4" transform="rotate(-18 930 122)"/>
+      <path d="M700 520 l-60 -22 l14 18z" fill="${F.papier}" opacity=".4"/><circle cx="702" cy="521" r="6" fill="${F.papier}"/>
+      <g transform="translate(420 150) scale(.36)"><rect x="76" y="68" width="88" height="12" fill="${N.stahl}"/><g fill="${F.meer2}"><rect x="4" y="46" width="76" height="56" rx="6"/><rect x="160" y="46" width="76" height="56" rx="6"/></g><rect x="86" y="34" width="68" height="84" rx="14" fill="${N.bau}"/></g>`,
+    cockpit: `<g fill="${N.stahl}"><circle cx="70" cy="110" r="26"/><circle cx="954" cy="110" r="26"/></g><g fill="${W.all}"><circle cx="70" cy="110" r="19"/><circle cx="954" cy="110" r="19"/></g>
+      <path d="M70 110 L82 96 M954 110 L942 96" stroke="${F.koralle}" stroke-width="4" stroke-linecap="round"/>
+      <path d="M0 300 H110 M914 300 H1024 M0 320 H96 M928 320 H1024" stroke="${N.platz}" stroke-width="8"/>
+      <rect x="330" y="286" width="364" height="30" rx="8" fill="${W.pult2}"/><g fill="${F.sonne}"><circle cx="360" cy="301" r="7"/><circle cx="390" cy="301" r="7"/><circle cx="634" cy="301" r="7"/><circle cx="664" cy="301" r="7"/></g>
+      <g fill="${N.boden}"><rect x="40" y="560" width="70" height="8" rx="4"/><rect x="900" y="590" width="80" height="8" rx="4"/><rect x="300" y="740" width="90" height="8" rx="4"/></g>`,
+  };
+  for (const name of Object.keys(DETAIL)) {
+    const ohne = B[name];
+    B[name] = () => ohne().replace(/<\/svg>$/, DETAIL[name] + "</svg>");
+  }
+
+  // Einstieg zum Bordcomputer und Symbol für die Karte
+  B.figurPult = () => svg("0 0 180 140", `
+    <path d="M20 60 H160 L176 132 H4Z" fill="${W.pult}"/><path d="M20 60 H160 L164 76 H16Z" fill="${W.pult2}"/>
+    <circle cx="52" cy="102" r="13" fill="${F.koralle}"/><circle cx="90" cy="102" r="13" fill="${F.sonne}"/><circle cx="128" cy="102" r="13" fill="${F.blatt}"/>
+    <rect x="52" y="8" width="76" height="50" rx="8" fill="${W.all}"/><path d="M62 40 l14 -12 l12 8 l16 -16 l14 10" stroke="#7df0a8" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`);
+  B.karte = () => svg("0 0 100 100", `
+    <path d="M10 24 L36 14 L64 24 L90 14 V76 L64 86 L36 76 L10 86Z" fill="${F.papier}" stroke="${F.tinte}" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M36 14 V76 M64 24 V86" stroke="${F.tinte}" stroke-width="4"/><path d="M22 60 q10 -14 20 -4 t22 -8" stroke="${F.koralle}" stroke-width="5" fill="none" stroke-dasharray="3 8" stroke-linecap="round"/>
+    <path d="M70 38 l10 10 m0 -10 l-10 10" stroke="${F.koralle}" stroke-width="5" stroke-linecap="round"/>`);
 })();
