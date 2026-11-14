@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Die Bucht – mBot2-Lernapp</title>
+<link rel="stylesheet" href="stil.css?v=0.6.0">
+</head>
+<body>
+
+<div id="buehne" data-modus="start" data-robo="aus">
+
+  <!-- Welt und Aufgabe -->
+  <div id="welt" class="schicht"></div>
+  <div id="aufgabe" class="schicht"></div>
+
+  <!-- Knöpfe am Rand -->
+  <button id="btn-truhe" class="knopf nur-welt" aria-label="Schatzkiste"><b id="truhe-zahl">0</b></button>
+  <button id="btn-zurueck" class="knopf nur-aufgabe" aria-label="Zurück zur Welt"></button>
+  <button id="btn-nochmal" class="knopf nur-aufgabe" aria-label="Noch einmal hören"></button>
+  <div id="punkte" class="nur-aufgabe"></div>
+  <button id="btn-stopp" aria-label="Roboter anhalten">STOPP</button>
+  <button id="btn-robo" class="knopf" aria-label="Roboter verbinden"><i id="robo-licht"></i></button>
+  <div id="version" aria-label="Elternbereich: lange drücken"></div>
+
+  <!-- Feier und Schatzkiste -->
+  <div id="feier" class="schicht aus"></div>
+
+  <!-- Startbild -->
+  <div id="start" class="schicht">
+    <h1>Die Bucht</h1>
+    <div id="start-rover" class="rover"></div>
+    <button id="btn-los" aria-label="Los geht's"></button>
+  </div>
+
+  <!-- Elternbereich (Versionsnummer unten rechts lange drücken) -->
+  <div id="eltern" class="schicht aus">
+    <div class="e-inhalt">
+      <div class="e-kopf">
+        <h2>Elternbereich</h2>
+        <span class="e-version"></span>
+        <button id="e-zu" class="e-knopf e-haupt">Schließen</button>
+      </div>
+
+      <section>
+        <h3>Roboter</h3>
+        <p id="e-kein-bt" class="e-warn aus">Dieser Browser kann kein Bluetooth. Auf dem iPad bitte <b>Bluefy</b> verwenden, am Computer <b>Chrome</b> oder <b>Edge</b>. Die App läuft auch ohne Roboter.</p>
+        <p>Status: <b id="e-status">Nicht verbunden</b></p>
+        <div class="e-reihe">
+          <button id="e-verbinden" class="e-knopf e-haupt">Verbinden</button>
+          <button id="e-alle" class="e-knopf">Alle Geräte zeigen</button>
+          <button id="e-trennen" class="e-knopf" disabled>Trennen</button>
+          <button id="e-probe-robo" class="e-knopf">Reaktion testen</button>
+        </div>
+        <label class="e-haken"><input type="checkbox" id="e-bewegung"> Bewegung erlauben (Roboter steht auf dem Boden)</label>
+        <div class="e-reihe"><span class="e-name">Fahrtempo</span><input type="range" id="e-tempo" min="20" max="60" step="5"><span id="e-tempo-wert" class="e-wert"></span></div>
+        <div class="e-reihe"><span class="e-name">Lautstärke Roboter</span><input type="range" id="e-laut" min="0" max="100" step="10"><span id="e-laut-wert" class="e-wert"></span></div>
+        <p class="e-hinweis">Bewegungen dauern höchstens 0,4 Sekunden am Stück. Der rote STOPP-Knopf oben rechts hält den Roboter sofort an.</p>
+      </section>
+
+      <section>
+        <h3>Stimme</h3>
+        <div class="e-reihe"><select id="e-stimme"></select><button id="e-probe" class="e-knopf">Probe hören</button></div>
+        <div class="e-reihe"><span class="e-name">Sprechtempo</span><input type="range" id="e-sprechtempo" min="0.6" max="1.1" step="0.05"><span id="e-sprechtempo-wert" class="e-wert"></span></div>
+        <p class="e-hinweis">Eigene Laut-Aufnahmen: Dateien wie <code>m.m4a</code> in den Ordner <code>audio/laute/</code> legen (siehe LIESMICH dort). Solange eine Aufnahme fehlt, fragt die App „Womit fängt Maus an?“.</p>
+      </section>
+
+      <section>
+        <h3>Lernstand</h3>
+        <div class="e-reihe"><span class="e-name">Mengen</span><select id="e-stufe"></select></div>
+        <pre id="e-stand"></pre>
+        <div class="e-reihe"><button id="e-reset" class="e-knopf e-rot">Fortschritt löschen</button></div>
+      </section>
+
+      <section>
+        <h3>Protokoll</h3>
+        <p class="e-hinweis">Bei Problemen: „Protokoll kopieren“ und den Text weitergeben. <a href="test/index.html">Zur Testkonsole</a></p>
+        <pre id="e-log"></pre>
+        <div class="e-reihe"><button id="e-kopieren" class="e-knopf">Protokoll kopieren</button></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- unsichtbar: zerlegt Strichdaten in Punkte -->
+<svg id="mess" width="0" height="0" aria-hidden="true"><path id="messpfad" d=""/></svg>
+
+<script src="mbot.js?v=0.6.0"></script>
+<script src="js/kern.js?v=0.6.0"></script>
+<script src="js/bilder.js?v=0.6.0"></script>
+<script src="inhalt/buchstaben.js?v=0.6.0"></script>
+<script src="inhalt/mengen.js?v=0.6.0"></script>
+<script src="inhalt/welt.js?v=0.6.0"></script>
+<script src="js/welt.js?v=0.6.0"></script>
+<script src="js/aufgaben/laut-finden.js?v=0.6.0"></script>
+<script src="js/aufgaben/nachspuren.js?v=0.6.0"></script>
+<script src="js/aufgaben/mengen.js?v=0.6.0"></script>
+<script src="js/app.js?v=0.6.0"></script>
+</body>
+</html>

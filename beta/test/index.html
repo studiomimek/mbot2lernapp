@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="mBot2 Test">
+<title>mBot2 Testkonsole</title>
+<style>
+  :root {
+    --bg: #f5f3ee; --card: #ffffff; --ink: #1c2230; --muted: #6a7280; --line: #e4dfd5;
+    --accent: #2e6ad8; --ok: #1d9a54; --bad: #d44343; --warn: #e39a2f; --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14171d; --card: #1d2129; --ink: #eef0f4; --muted: #98a1b0; --line: #2d333e; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body { font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+  header {
+    position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top));
+    background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  header h1 { font-size: 20px; margin: 0; flex: 1; min-width: 180px; }
+  header h1 small { font-weight: 500; color: var(--muted); font-size: 13px; margin-left: 6px; }
+  .status { padding: 7px 14px; border-radius: 999px; font-weight: 600; font-size: 14px; background: var(--line); }
+  .status.on { background: var(--ok); color: #fff; }
+  .status.busy { background: var(--warn); color: #fff; }
+  .status.err { background: var(--bad); color: #fff; }
+  main { max-width: 1000px; margin: 0 auto; padding: 16px; display: grid; gap: 16px;
+         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
+  section.wide { grid-column: 1 / -1; }
+  h2 { font-size: 17px; margin: 0 0 4px; display: flex; align-items: center; }
+  .num { flex: none; width: 28px; height: 28px; border-radius: 14px; background: var(--accent); color: #fff;
+         display: inline-grid; place-items: center; font-size: 14px; margin-right: 10px; }
+  p.hint { margin: 4px 0 12px; color: var(--muted); font-size: 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .row + .row { margin-top: 8px; }
+  button {
+    appearance: none; -webkit-appearance: none; border: 0; border-radius: 12px; min-height: 52px; padding: 10px 16px;
+    font: inherit; font-weight: 600; background: var(--line); color: var(--ink); cursor: pointer; touch-action: manipulation;
+  }
+  button.primary { background: var(--accent); color: #fff; }
+  button.ok { background: var(--ok); color: #fff; }
+  button.bad { background: var(--bad); color: #fff; }
+  button.stop { background: var(--bad); color: #fff; min-width: 120px; font-size: 18px; }
+  button:disabled { opacity: .4; cursor: default; }
+  button:not(:disabled):active { transform: scale(.97); }
+  input[type=text], select {
+    font: inherit; min-height: 48px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--ink); padding: 8px 12px; min-width: 0;
+  }
+  input[type=text] { flex: 1 1 160px; }
+  label.check { display: flex; gap: 10px; align-items: center; font-weight: 600; padding: 8px 0; }
+  label.check input { width: 24px; height: 24px; }
+  input[type=range] { flex: 1; min-width: 120px; }
+  .banner { grid-column: 1 / -1; border-radius: var(--radius); padding: 14px 16px; font-weight: 600;
+            background: #fde8e8; color: #8a1f1f; border: 1px solid #f3c2c2; display: none; }
+  .banner.show { display: block; }
+  .warnbox { background: color-mix(in srgb, var(--warn) 18%, transparent); border-radius: 10px; padding: 8px 12px; font-size: 14px; margin-bottom: 10px; }
+  .game { display: flex; gap: 16px; justify-content: center; margin: 16px 0 8px; flex-wrap: wrap; }
+  .tile {
+    width: 128px; height: 128px; font-size: 76px; font-weight: 700; border-radius: 26px;
+    background: var(--bg); border: 3px solid var(--line); color: var(--ink);
+  }
+  .tile.right { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .tile.wrong { animation: shake .4s; border-color: var(--bad); }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+  #log {
+    margin: 0; height: 260px; overflow: auto; background: #0f1218; color: #cfe3cf; border-radius: 10px; padding: 10px 12px;
+    font: 12.5px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word;
+  }
+  #log .e { color: #ff9b9b; } #log .w { color: #ffd27a; } #log .s { color: #8fd0ff; } #log .r { color: #b7f5b7; }
+</style>
+</head>
+<body>
+<header>
+  <h1>mBot2 Testkonsole <small>v0.6.0 · <a href="../index.html" style="color:inherit">zur App</a></small></h1>
+  <span id="status" class="status">Nicht verbunden</span>
+</header>
+
+<main>
+  <div id="banner" class="banner"></div>
+
+  <section>
+    <h2><span class="num">1</span>Verbinden</h2>
+    <p class="hint">mBot2 einschalten. Er darf nicht gleichzeitig mit mBlock oder der Makeblock-App verbunden sein.</p>
+    <div class="row">
+      <button class="primary" id="btnConnect">Verbinden</button>
+      <button id="btnConnectAll">Alle Geräte zeigen</button>
+      <button id="btnDisconnect" data-need>Trennen</button>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">2</span>Licht und Ton</h2>
+    <p class="hint">Einfache Befehle ohne Bewegung. Der Roboter darf auf dem Tisch stehen.</p>
+    <div class="row">
+      <button data-need data-act="green">Grün</button>
+      <button data-need data-act="red">Rot</button>
+      <button data-need data-act="blue">Blau</button>
+      <button data-need data-act="rainbow">Regenbogen</button>
+      <button data-need data-act="ledoff">Licht aus</button>
+    </div>
+    <div class="row">
+      <button data-need data-act="toneHigh">Ton hoch</button>
+      <button data-need data-act="toneLow">Ton tief</button>
+      <button data-need data-act="sound">Roboter-Sound</button>
+    </div>
+    <div class="row">
+      <span>Lautstärke</span>
+      <input type="range" id="vol" min="0" max="100" step="10" value="60" data-need>
+      <span id="volVal">60</span>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">3</span>Anzeige am Roboter</h2>
+    <p class="hint">Testet, ob Buchstaben auf dem kleinen Display gut lesbar sind.</p>
+    <div class="row">
+      <input type="text" id="dispText" value="M" maxlength="12" autocomplete="off" autocapitalize="characters">
+      <select id="dispSize">
+        <option value="16">klein (16)</option>
+        <option value="24">mittel (24)</option>
+        <option value="32" selected>groß (32)</option>
+      </select>
+    </div>
+    <div class="row">
+      <button data-need id="btnShow">Anzeigen</button>
+      <button data-need id="btnClear">Display leeren</button>
+    </div>
+    <p class="hint" style="margin-top:14px"><b>Test: sehr große Buchstaben.</b> 32 ist die größte Schrift. Größer geht vielleicht über ein „Sprite“ (Grafikobjekt). Jeder Schritt steht im Protokoll.</p>
+    <div class="row">
+      <select id="spriteZoom">
+        <option value="200" selected>Zoom 200 %</option>
+        <option value="300">Zoom 300 %</option>
+        <option value="400">Zoom 400 %</option>
+      </select>
+      <button data-need id="btnSprite">Groß anzeigen (Test)</button>
+      <button data-need id="btnSpriteOff">Groß ausblenden</button>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">4</span>Rückkanal</h2>
+    <p class="hint">Der Roboter schickt einen Messwert zurück. Prüft, ob Antworten ankommen.</p>
+    <div class="row">
+      <button data-need id="btnBattery">Akku abfragen</button>
+      <button data-need id="btnDistance">Abstand messen</button>
+    </div>
+    <p id="readout" class="hint" style="font-size:18px;color:var(--ink);margin-top:12px">–</p>
+  </section>
+
+  <section>
+    <h2><span class="num">5</span>Bewegung</h2>
+    <div class="warnbox">Roboter auf den Boden stellen. Bewegungen stoppen nach kurzer Zeit von selbst, STOPP hält sofort an.</div>
+    <label class="check"><input type="checkbox" id="allowMove"> Bewegung erlauben</label>
+    <div class="row">
+      <span>Fahrtempo</span>
+      <input type="range" id="moveSpeed" min="20" max="80" step="10" value="50">
+      <span id="moveSpeedVal">50</span>
+    </div>
+    <div class="row">
+      <button data-need data-move data-act="fwd">Vorwärts</button>
+      <button data-need data-move data-act="back">Rückwärts</button>
+      <button data-need data-move data-act="left">Links drehen</button>
+      <button data-need data-move data-act="right">Rechts drehen</button>
+      <button data-need data-move data-act="spin">Ganze Runde</button>
+    </div>
+    <div class="row">
+      <button class="stop" data-need data-act="stop">STOPP</button>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">6</span>Reaktionen</h2>
+    <p class="hint">Dieselben Reaktionen wie in der App (aus mbot.js). Ohne „Bewegung erlauben“ nur Licht und Ton.</p>
+    <div class="row">
+      <button class="ok" data-need data-act="richtig">Richtig!</button>
+      <button class="bad" data-need data-act="falsch">Falsch</button>
+      <button data-need data-act="neugierig">Neugierig</button>
+      <button data-need data-act="zaehle">Zähle 5</button>
+      <button data-need data-act="tanz">Feier</button>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">7</span>Sprachausgabe (iPad)</h2>
+    <p class="hint">Funktioniert auch ohne Roboter.</p>
+    <div class="row">
+      <select id="voice" style="flex:1 1 220px"></select>
+      <button id="btnVoices">Stimmen neu laden</button>
+    </div>
+    <div class="row">
+      <label class="check"><input type="checkbox" id="allVoices"> Auch fremdsprachige Stimmen zeigen</label>
+    </div>
+    <div class="row">
+      <span>Tempo</span>
+      <input type="range" id="rate" min="0.5" max="1.2" step="0.05" value="0.85">
+      <span id="rateVal">0.85</span>
+    </div>
+    <div class="row">
+      <input type="text" id="speakText" value="Hallo! Wo ist das M?">
+      <button class="primary" id="btnSpeak">Sprechen</button>
+    </div>
+  </section>
+
+  <section class="wide">
+    <h2><span class="num">8</span>Mini-Spiel: Wo ist der Buchstabe?</h2>
+    <p class="hint">Das iPad fragt, das Kind tippt, der Roboter reagiert. Läuft auch ohne Roboter.</p>
+    <div class="row"><button class="primary" id="btnRound">Neue Runde</button><button id="btnRepeat">Frage wiederholen</button></div>
+    <div class="game" id="game"></div>
+  </section>
+
+  <section class="wide">
+    <h2><span class="num">9</span>Freier Befehl (für Experten)</h2>
+    <p class="hint">Beliebigen Python-Befehl an den Roboter schicken, z. B. <code>cyberpi.led.on(255,128,0)</code></p>
+    <div class="row">
+      <input type="text" id="rawCmd" value="cyberpi.get_bri()" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <label class="check"><input type="checkbox" id="rawResp" checked> Antwort erwarten</label>
+      <button data-need id="btnRaw">Senden</button>
+    </div>
+  </section>
+
+  <section class="wide">
+    <h2>Protokoll</h2>
+    <p class="hint">Bei Problemen: „Protokoll kopieren“ und den Text weitergeben.</p>
+    <pre id="log"></pre>
+    <div class="row" style="margin-top:10px">
+      <button id="btnCopy">Protokoll kopieren</button>
+      <button id="btnClearLog">Leeren</button>
+      <label class="check"><input type="checkbox" id="showHex"> Rohdaten zeigen</label>
+    </div>
+  </section>
+</main>
+
+<script src="../mbot.js?v=0.6.0"></script>
+<script>
+"use strict";
+
+/* Testkonsole: Protokoll, Verbindung und Reaktionen kommen aus ../mbot.js (gemeinsam mit der App) */
+const { errText, sleep } = MBot.hilfen;
+const run = MBot.run, evalExpr = MBot.evalExpr;
+const $ = (id) => document.getElementById(id);
+
+/* ---------- Protokollfenster ---------- */
+const logEl = $("log");
+function log(msg, cls = "") {
+  const t = new Date().toLocaleTimeString("de-DE");
+  const line = document.createElement("div");
+  if (cls) line.className = cls;
+  line.textContent = `${t}  ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+window.addEventListener("error", (e) => log(`JS-Fehler: ${e.message}`, "e"));
+window.addEventListener("unhandledrejection", (e) => log(`Fehler: ${errText(e.reason)}`, "e"));
+MBot.beiLog(log);
+
+/* ---------- Verbindung ---------- */
+const bot = { get connected() { return MBot.verbunden(); } };
+
+function refreshButtons() {
+  const move = $("allowMove").checked;
+  document.querySelectorAll("[data-need]").forEach((el) => {
+    el.disabled = !bot.connected || (el.hasAttribute("data-move") && !move);
+  });
+  $("btnConnect").disabled = bot.connected;
+  $("btnConnectAll").disabled = bot.connected;
+}
+MBot.beiStatus((kind, text) => {
+  const s = $("status"); s.className = "status " + kind; s.textContent = text;
+  refreshButtons();
+});
+
+function syncSettings() {
+  MBot.einstellungen.bewegung = $("allowMove").checked;
+  MBot.einstellungen.tempo = +$("moveSpeed").value;
+  MBot.einstellungen.lautstaerke = +$("vol").value;
+  MBot.einstellungen.rohdaten = $("showHex").checked;
+}
+["allowMove", "moveSpeed", "vol", "showHex"].forEach((id) => $(id).addEventListener("change", syncSettings));
+
+function connect(showAll) {
+  if (!MBot.kannBluetooth()) { showNoBluetooth(); return; }
+  syncSettings();
+  return MBot.verbinde(showAll);
+}
+const disconnect = () => MBot.trenne();
+
+/* ---------- Aktionen ---------- */
+const canMove = () => $("allowMove").checked;
+const speed = () => +$("moveSpeed").value;
+const letterSize = () => $("dispSize").value;
+const move = (fn, spd, secs) => { syncSettings(); return MBot.move(fn, spd, secs); };
+
+const SPIN_STOP_AT = 330;   // Grad; ggf. nach Test anpassen
+async function spin() {
+  if (!canMove()) { log("Bewegung übersprungen (nicht erlaubt)", "w"); return; }
+  const ep = MBot.epoche();
+  const stopped = () => MBot.gestoppt(ep);
+  // Drehen, bis der Lagesensor eine ganze Runde meldet (höchstens 8 s)
+  await run("cyberpi.reset_yaw()");
+  let last = 0, turned = 0;
+  try { last = +(await evalExpr("cyberpi.get_yaw()", 1500)) || 0; } catch (_) {}
+  await run(`mbot2.turn_right(${speed()})`);
+  const end = Date.now() + 8000;
+  // Bremsweg: Der Roboter dreht nach dem Stopp-Befehl noch etwas weiter
+  while (Date.now() < end && !stopped() && Math.abs(turned) < SPIN_STOP_AT) {
+    let y;
+    try { y = +(await evalExpr("cyberpi.get_yaw()", 1000)); } catch (_) { break; }
+    let d = y - last; if (d > 180) d -= 360; if (d < -180) d += 360;
+    turned += d; last = y;
+  }
+  if (!stopped()) await run("mbot2.EM_stop()");
+  const atStop = Math.round(Math.abs(turned));
+  await sleep(600);
+  try {
+    const y = +(await evalExpr("cyberpi.get_yaw()", 1000));
+    let d = y - last; if (d > 180) d -= 360; if (d < -180) d += 360;
+    turned += d;
+  } catch (_) {}
+  log(`Gedreht: ${atStop}° beim Stopp-Befehl, ${Math.round(Math.abs(turned))}° nach dem Auslaufen`, "r");
+}
+
+const reakt = (name, ...args) => { syncSettings(); return MBot.reaktion[name](...args); };
+
+const actions = {
+  green: () => run("cyberpi.led.on(0,255,0)"),
+  red: () => run("cyberpi.led.on(255,0,0)"),
+  blue: () => run("cyberpi.led.on(0,0,255)"),
+  rainbow: () => run("cyberpi.led.play(name='rainbow')"),
+  ledoff: () => run("cyberpi.led.on(0,0,0)"),
+  toneHigh: () => run("cyberpi.audio.play_tone(880,0.3)"),
+  toneLow: () => run("cyberpi.audio.play_tone(220,0.4)"),
+  sound: () => run("cyberpi.audio.play('yeah')"),
+  fwd: () => move("forward", speed(), 1.0),
+  back: () => move("backward", speed(), 1.0),
+  left: () => move("turn_left", speed(), 0.5),
+  right: () => move("turn_right", speed(), 0.5),
+  spin: () => spin(),
+  stop: () => MBot.stopp(),
+
+  // Dieselben Reaktionen, die die App verwendet
+  neugierig: () => reakt("neugierig"),
+  richtig: () => reakt("richtig"),
+  falsch: () => reakt("nochmal"),
+  zaehle: () => reakt("zaehle", 5),
+  tanz: () => reakt("feier"),
+};
+
+function bindAction(el, fn) {
+  el.addEventListener("click", async () => {
+    try { await fn(); } catch (e) { log(`Fehler: ${errText(e)}`, "e"); }
+  });
+}
+document.querySelectorAll("[data-act]").forEach((el) => bindAction(el, actions[el.dataset.act]));
+
+bindAction($("btnConnect"), () => connect(false));
+bindAction($("btnConnectAll"), () => connect(true));
+bindAction($("btnDisconnect"), disconnect);
+$("allowMove").addEventListener("change", refreshButtons);
+syncSettings();
+$("moveSpeed").addEventListener("input", () => { $("moveSpeedVal").textContent = $("moveSpeed").value; });
+
+$("vol").addEventListener("input", () => { $("volVal").textContent = $("vol").value; });
+$("vol").addEventListener("change", () => run(`cyberpi.audio.set_vol(${$("vol").value})`).catch((e) => log(e.message, "e")));
+
+const safeText = (s) => s.replace(/[\\'"\n\r]/g, "").slice(0, 12);
+bindAction($("btnShow"), () => run(`cyberpi.display.show_label('${safeText($("dispText").value)}',${$("dispSize").value},'center')`));
+bindAction($("btnClear"), () => run("cyberpi.display.clear()"));
+
+// Versuch: großer Buchstabe als Sprite. Jeder Schritt wartet auf Antwort,
+// damit im Protokoll steht, welcher Befehl klappt (Antwort) und welcher nicht (keine Antwort).
+async function tryStep(code) {
+  try { await evalExpr(code, 2500); return true; }
+  catch (e) { log(`  ✗ ${code}: keine Antwort (Befehl unbekannt oder Fehler)`, "w"); return false; }
+}
+bindAction($("btnSprite"), async () => {
+  const L = safeText($("dispText").value) || "M";
+  const zoom = $("spriteZoom").value;
+  log(`Sprite-Test: „${L}“ mit ${zoom} %`, "s");
+  await tryStep("cyberpi.display.clear()");
+  await tryStep("_sp.delete() if '_sp' in globals() else 0");
+  if (!(await tryStep("globals().__setitem__('_sp', cyberpi.sprite())"))) return;
+  await tryStep("_sp.close_brush()");          // Stift-Symbol ausblenden
+  await tryStep("_sp.set_antialiased(True)");  // glattere Kanten
+  await tryStep(`_sp.draw_text('${L}')`);
+  await tryStep(`_sp.set_size(${zoom})`);
+  await tryStep("_sp.move_to(64,64)");
+  await tryStep("_sp.show()");
+  await tryStep("cyberpi.screen.render()");
+  log("Sprite-Test fertig. Was zeigt das Display?", "s");
+});
+bindAction($("btnSpriteOff"), async () => {
+  await tryStep("_sp.hide()");
+  await tryStep("cyberpi.screen.render()");
+  await tryStep("cyberpi.display.clear()");
+});
+
+bindAction($("btnBattery"), async () => {
+  $("readout").textContent = "frage …";
+  try { const v = await evalExpr("cyberpi.get_battery()"); $("readout").textContent = `Akku: ${v} %`; }
+  catch (e) { $("readout").textContent = "keine Antwort"; throw e; }
+});
+bindAction($("btnDistance"), async () => {
+  $("readout").textContent = "messe …";
+  try { const v = await evalExpr("cyberpi.ultrasonic2.get(1)"); $("readout").textContent = `Abstand: ${v} cm`; }
+  catch (e) { $("readout").textContent = "keine Antwort"; throw e; }
+});
+
+bindAction($("btnRaw"), async () => {
+  const code = $("rawCmd").value.trim();
+  if (!code) return;
+  if ($("rawResp").checked) await evalExpr(code); else await run(code);
+});
+
+/* ---------- Sprachausgabe ---------- */
+let voices = [];
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+};
+
+function loadVoices() {
+  if (!("speechSynthesis" in window)) return;
+  const all = speechSynthesis.getVoices();
+  const de = all.filter((v) => (v.lang || "").toLowerCase().startsWith("de"));
+  voices = ($("allVoices").checked || !de.length) ? all : de;
+  const sel = $("voice");
+  const saved = store.get("voice");
+  sel.innerHTML = "";
+  voices.forEach((v, i) => {
+    const o = document.createElement("option");
+    o.value = i; o.textContent = `${v.name} (${v.lang})`;
+    if (v.name === saved) o.selected = true;
+    sel.appendChild(o);
+  });
+  if (!sel.options.length) {
+    const o = document.createElement("option"); o.textContent = "Standardstimme"; sel.appendChild(o);
+  }
+  if (all.length && !de.length) log("Keine deutsche Stimme gefunden, zeige alle Stimmen.", "w");
+}
+
+function speak(text) {
+  if (!("speechSynthesis" in window)) { log("Dieser Browser hat keine Sprachausgabe.", "e"); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "de-DE";
+  const v = voices[+$("voice").value];
+  if (v) u.voice = v;
+  u.rate = +$("rate").value;
+  u.onerror = (e) => log(`Sprachausgabe-Fehler: ${e.error}`, "e");
+  speechSynthesis.speak(u);
+}
+
+$("voice").addEventListener("change", () => { const v = voices[+$("voice").value]; if (v) store.set("voice", v.name); });
+$("rate").addEventListener("input", () => { $("rateVal").textContent = $("rate").value; });
+$("btnSpeak").addEventListener("click", () => {
+  if (voices.length < 2) loadVoices();
+  const v = voices[+$("voice").value];
+  log(`Spreche mit ${v ? v.name + " (" + v.lang + ")" : "Standardstimme"}: „${$("speakText").value}“`);
+  speak($("speakText").value);
+});
+$("btnVoices").addEventListener("click", () => {
+  loadVoices();
+  const all = "speechSynthesis" in window ? speechSynthesis.getVoices() : [];
+  log(`Stimmen: ${all.length} insgesamt, ${voices.length} angezeigt`);
+  all.forEach((v) => log(`  ${v.name} (${v.lang})${v.localService ? "" : " [online]"}`));
+});
+$("allVoices").addEventListener("change", loadVoices);
+$("voice").addEventListener("focus", () => { if (voices.length < 2) loadVoices(); });
+
+/* ---------- Mini-Spiel ---------- */
+const LETTERS = ["M", "A", "O", "L", "S", "E", "I", "T", "R", "N", "U", "H"];
+const game = { target: null, locked: false };
+
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function newRound() {
+  clearTimeout(game.timer);
+  const pool = shuffle(LETTERS.slice());
+  const choice = pool.slice(0, 3);
+  game.target = choice[Math.floor(Math.random() * 3)];
+  game.locked = false;
+  const box = $("game");
+  box.innerHTML = "";
+  for (const l of choice) {
+    const b = document.createElement("button");
+    b.className = "tile"; b.textContent = l;
+    b.addEventListener("click", () => answer(b, l));
+    box.appendChild(b);
+  }
+  askQuestion();
+  if (bot.connected) run(`cyberpi.display.show_label('?',${letterSize()},'center')`).catch(() => {});
+}
+
+function askQuestion() { if (game.target) speak(`Wo ist das ${game.target}?`); }
+
+async function answer(btn, letter) {
+  if (game.locked) return;
+  if (letter === game.target) {
+    game.locked = true;
+    btn.classList.add("right");
+    log(`Spiel: richtig (${letter})`, "r");
+    speak(`Super! Das ist das ${letter}.`);
+    if (bot.connected) {
+      run(`cyberpi.display.show_label('${letter}',${letterSize()},'center')`).catch(() => {});
+      try { await actions.richtig(); } catch (e) { log(e.message, "e"); }
+    }
+    game.timer = setTimeout(newRound, 2500);
+  } else {
+    btn.classList.remove("wrong"); void btn.offsetWidth; btn.classList.add("wrong");
+    log(`Spiel: falsch (${letter} statt ${game.target})`, "w");
+    speak(`Das ist das ${letter}. Versuch es noch einmal.`);
+    if (bot.connected) { try { await actions.falsch(); } catch (e) { log(e.message, "e"); } }
+  }
+}
+
+$("btnRound").addEventListener("click", newRound);
+$("btnRepeat").addEventListener("click", askQuestion);
+
+/* ---------- Protokoll-Werkzeuge ---------- */
+$("btnClearLog").addEventListener("click", () => { logEl.innerHTML = ""; });
+$("btnCopy").addEventListener("click", async () => {
+  const text = logEl.innerText;
+  try { await navigator.clipboard.writeText(text); log("Protokoll kopiert.", "r"); }
+  catch (_) {
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta);
+    ta.select(); try { document.execCommand("copy"); log("Protokoll kopiert.", "r"); } catch (e) { log("Kopieren ging nicht. Text bitte markieren.", "e"); }
+    ta.remove();
+  }
+});
+
+/* ---------- Start: Umgebung prüfen ---------- */
+function showNoBluetooth() {
+  const b = $("banner");
+  b.innerHTML = "Dieser Browser kann kein Bluetooth. Auf dem iPad bitte die App <b>Bluefy</b> verwenden, am Computer <b>Chrome</b> oder <b>Edge</b>.";
+  b.classList.add("show");
+  log("navigator.bluetooth fehlt: kein Web Bluetooth in diesem Browser.", "e");
+}
+
+(function init() {
+  log(`Testkonsole v0.6.0 gestartet (mbot.js ${MBot.VERSION})`);
+  log(`Browser: ${navigator.userAgent}`);
+  log(`Sichere Verbindung (HTTPS/Datei): ${window.isSecureContext ? "ja" : "NEIN – Bluetooth braucht HTTPS"}`, window.isSecureContext ? "" : "e");
+  log(`Web Bluetooth: ${navigator.bluetooth ? "vorhanden" : "fehlt"}`, navigator.bluetooth ? "" : "e");
+  log(`Sprachausgabe: ${"speechSynthesis" in window ? "vorhanden" : "fehlt"}`);
+  if (!navigator.bluetooth) showNoBluetooth();
+  if ("speechSynthesis" in window) {
+    loadVoices();
+    speechSynthesis.addEventListener ? speechSynthesis.addEventListener("voiceschanged", loadVoices) : (speechSynthesis.onvoiceschanged = loadVoices);
+    setTimeout(() => { loadVoices(); log(`Stimmen gefunden: ${voices.length}`); }, 800);
+  }
+  refreshButtons();
+  newRoundPreview();
+})();
+
+function newRoundPreview() {
+  // Erste Runde anzeigen, ohne zu sprechen (iOS spricht erst nach einem Antippen)
+  const pool = shuffle(LETTERS.slice()).slice(0, 3);
+  game.target = null;
+  const box = $("game"); box.innerHTML = "";
+  for (const l of pool) { const b = document.createElement("button"); b.className = "tile"; b.textContent = l; b.disabled = true; box.appendChild(b); }
+}
+</script>
+</body>
+</html>
