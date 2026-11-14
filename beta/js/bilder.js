@@ -375,4 +375,50 @@
     <g transform="translate(6 78) scale(.8)">${teil.muenze()}</g><g transform="translate(64 86) scale(.8)">${teil.muenze()}</g><g transform="translate(122 78) scale(.8)">${teil.muenze()}</g>
     <g transform="translate(36 38) scale(.8)">${teil.muenze()}</g><g transform="translate(94 40) scale(.8)">${teil.muenze()}</g>
     <g transform="translate(66 0) scale(.8)">${teil.muenze()}</g>`);
+  /* ---------- In der Rakete und im Weltraum ---------- */
+  const W = { wand: "#39426b", pult: "#5a6390", pult2: "#7480b3", all: "#141a3a" };
+  const fenster = (cx, cy, r, sternchen) => `<circle cx="${cx}" cy="${cy}" r="${r + 16}" fill="${N.stahl}"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="${W.all}"/>${sterne(sternchen)}`;
+
+  B.cockpit = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${W.wand}"/>
+    ${fenster(200, 190, 70, [[170, 170, 3], [222, 214, 2], [210, 150, 2]])}
+    ${fenster(512, 180, 78, [[480, 150, 3], [540, 206, 2.5], [520, 140, 2], [470, 214, 2]])}
+    ${fenster(824, 190, 70, [[800, 160, 2.5], [850, 210, 3], [846, 160, 2]])}
+    <path d="M120 332 H904 L964 480 H60Z" fill="${W.pult}"/><path d="M120 332 H904 L912 352 H112Z" fill="${W.pult2}"/>
+    <circle cx="230" cy="412" r="17" fill="${F.koralle}"/><circle cx="286" cy="412" r="17" fill="${F.sonne}"/><circle cx="342" cy="412" r="17" fill="${F.blatt}"/>
+    <rect x="420" y="378" width="184" height="74" rx="12" fill="${W.all}"/><path d="M436 426 l30 -22 l26 14 l34 -30 l28 22 l34 -12" stroke="#7df0a8" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="650" y="382" width="110" height="64" rx="10" fill="${F.meer2}"/><circle cx="705" cy="414" r="18" fill="${F.papier}"/>
+    <rect x="806" y="372" width="12" height="60" rx="6" fill="${N.stahl}"/><circle cx="812" cy="368" r="15" fill="${F.koralle}"/>
+    <rect y="480" width="1024" height="288" fill="${N.boden}"/><rect y="536" width="1024" height="232" fill="${N.boden2}"/>
+    <path d="M0 610 H1024 M0 690 H1024" stroke="${N.boden}" stroke-width="4"/>`);
+
+  B.weltraum = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${W.all}"/>
+    <ellipse cx="700" cy="230" rx="270" ry="120" fill="${F.lila}" opacity=".13"/><ellipse cx="270" cy="540" rx="230" ry="110" fill="${F.meer}" opacity=".13"/>
+    ${sterne([[60, 80, 3], [130, 420, 2], [240, 60, 2], [300, 420, 2.5], [380, 130, 2], [420, 620, 3], [470, 260, 2], [520, 470, 2], [560, 700, 2.5], [680, 60, 2], [720, 420, 3], [770, 250, 2], [830, 110, 2.5], [900, 330, 2], [960, 190, 3], [990, 470, 2], [60, 640, 2.5], [200, 720, 2], [650, 560, 2], [330, 250, 2]])}
+    <circle cx="170" cy="176" r="66" fill="${F.meer}"/><path d="M130 146 Q160 126 186 150 Q170 176 140 172Z M176 196 Q206 182 222 204 Q202 230 178 220Z" fill="${F.blatt}"/>
+    <circle cx="610" cy="130" r="38" fill="${N.bau}"/><circle cx="598" cy="120" r="8" fill="${N.stahl}"/><circle cx="624" cy="142" r="6" fill="${N.stahl}"/>
+    <circle cx="884" cy="660" r="150" fill="#f59a3c"/><path d="M742 620 Q884 590 1024 630 V664 Q884 624 738 652Z" fill="#e2803a"/><path d="M748 700 Q884 676 1024 712 V740 Q884 706 760 730Z" fill="#fbb866"/>
+    <ellipse cx="884" cy="660" rx="236" ry="44" fill="none" stroke="#fbd08a" stroke-width="16" transform="rotate(-14 884 660)"/>
+    <path d="M356 318 L262 258 L282 292 L250 300Z" fill="${F.papier}" opacity=".45"/><circle cx="356" cy="318" r="12" fill="${F.papier}"/>`);
+
+  B.komet = () => svg("0 0 100 100", `<path d="M6 94 L52 28 L72 60Z" fill="${F.sonne}" opacity=".55"/><g style="color:${F.papier}" transform="translate(36 2) scale(.62)">${teil.stern()}</g>`);
+
+  B.figurTuer = () => svg("0 0 120 132", `
+    <path d="M36 62 H84 L110 128 H10Z" fill="${N.stahl}"/><path d="M30 84 H90 M22 106 H98" stroke="${N.platz}" stroke-width="5"/>
+    <path d="M32 64 V32 Q32 4 60 4 Q88 4 88 32 V64Z" fill="${F.tinte}"/><circle cx="60" cy="32" r="11" fill="${F.sonne}"/>`);
+
+  B.figurStartknopf = () => svg("0 0 180 150", `
+    <rect x="16" y="84" width="148" height="60" rx="14" fill="${W.pult}"/><rect x="16" y="84" width="148" height="16" rx="8" fill="${W.pult2}"/>
+    <path d="M40 90 Q40 18 90 18 Q140 18 140 90Z" fill="${F.koralle}"/><ellipse cx="74" cy="46" rx="20" ry="11" fill="#fff" opacity=".3" transform="rotate(-24 74 46)"/>`);
+
+  B.figurSatellit = () => svg("0 0 240 150", `
+    <rect x="76" y="68" width="88" height="12" fill="${N.stahl}"/>
+    <g fill="${F.meer2}"><rect x="4" y="46" width="76" height="56" rx="6"/><rect x="160" y="46" width="76" height="56" rx="6"/></g>
+    <path d="M30 46 V102 M56 46 V102 M4 74 H80 M186 46 V102 M212 46 V102 M160 74 H236" stroke="${F.tief}" stroke-width="3"/>
+    <rect x="86" y="34" width="68" height="84" rx="14" fill="${F.papier}"/>
+    <circle cx="108" cy="68" r="9" fill="${F.tinte}"/><circle cx="132" cy="68" r="9" fill="${F.tinte}"/><path d="M106 92 Q120 102 134 92" stroke="${F.tinte}" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <rect x="117" y="10" width="6" height="26" fill="${N.stahl}"/><circle cx="120" cy="10" r="8" fill="${F.koralle}"/>`);
+
+  B.figurLandung = () => svg("-30 0 160 204", `<ellipse cx="50" cy="196" rx="74" ry="8" fill="#fff" opacity=".15"/>${teil.rakete()}`);
 })();

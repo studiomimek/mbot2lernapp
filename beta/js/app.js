@@ -8,7 +8,7 @@
   const FUNDNAME = {
     muschel: "eine Muschel", seestern: "einen Seestern", perle: "eine Perle",
     stern: "einen Stern", planet: "einen Planeten", rakete: "eine kleine Rakete",
-    feder: "eine Papageienfeder", flasche: "eine Flaschenpost", muenze: "eine Goldmünze",
+    feder: "eine Papageienfeder", flasche: "eine Flaschenpost", muenze: "eine Goldmünze", komet: "einen Kometen",
   };
   let lauf = null;   // laufende Aufgabe
 
@@ -63,8 +63,10 @@
       rakete() { roverStimmung("freu"); if (ohneRoboter()) App.audio.klang("rakete"); MBot.reaktion.rakete(); },
       // Eingabe über den Roboter
       roboter: () => MBot.verbunden(),
+      winken: (fn) => { if (MBot.verbunden()) MBot.beobachteHand(() => { if (lebt()) fn(); }, lebt); },
       hand: (maxMs, weiter = () => true) => (MBot.verbunden() ? MBot.warteAufHand(maxMs, () => lebt() && weiter()) : Promise.resolve(false)),
       fertig() { beende(true); },
+      reise(ortId) { beende(false, ortId); },            // Aufgabe endet ohne Fundstück, weiter an einem anderen Ort
     };
 
     $("#punkte").innerHTML = "";
@@ -83,12 +85,19 @@
     zeigeTruhenzahl();
   }
 
-  function beende(erfolg) {
+  function beende(erfolg, reiseziel) {
     const l = lauf;
     if (!l) return;
     l.lebt = false; lauf = null;
     if (l.ende) { try { l.ende(); } catch (_) {} }
     App.still();
+    if (reiseziel) {
+      $("#aufgabe").innerHTML = "";
+      zeigeModus("welt");
+      App.welt.zeige(reiseziel, { rein: "tor", ansage: App.inhalt.welt.orte[reiseziel].ansage });
+      zeigeTruhenzahl();
+      return;
+    }
     if (!erfolg) { App.log("Aufgabe verlassen"); MBot.reaktion.ruhe(); zurWelt(l.einstieg.id); return; }
 
     // Geschafft: Fundstück für die Schatzkiste
@@ -174,6 +183,7 @@
     ["plusStufe", "Plus (Sterne)", App.inhalt.rechnen.plus],
     ["reiheStufe", "Zahlenreihe", App.inhalt.rechnen.reihe],
     ["vergleichStufe", "Vergleichen (Münzen)", App.inhalt.rechnen.vergleichen],
+    ["winkStufe", "Winken zählen", App.inhalt.rechnen.winken],
   ];
 
   function fuelleStimmen() {
@@ -254,6 +264,9 @@
     $("#e-tempo").value = e.tempo; $("#e-tempo-wert").textContent = e.tempo;
     $("#e-laut").value = e.lautstaerke; $("#e-laut-wert").textContent = e.lautstaerke;
     $("#e-sprechtempo").value = e.sprechtempo; $("#e-sprechtempo-wert").textContent = e.sprechtempo;
+    $("#e-klatschen").value = e.klatschen || "aus";
+    $("#e-klatsch-schwelle").value = e.klatschSchwelle; $("#e-klatsch-schwelle-wert").textContent = e.klatschSchwelle;
+    $("#e-klatsch-anzeige").textContent = "";
     $("#e-status").textContent = statusText;
     $("#e-kein-bt").classList.toggle("aus", MBot.kannBluetooth());
     fuelleStimmen();
@@ -293,6 +306,26 @@
     $("#e-sprechtempo").addEventListener("input", (ev) => { e.sprechtempo = +ev.target.value; $("#e-sprechtempo-wert").textContent = e.sprechtempo; merke(); });
     $("#e-probe").addEventListener("click", () => { App.audio.entsperre(); App.sag("Hallo! Womit fängt Maus an?"); });
     $("#e-probe-klang").addEventListener("click", () => { App.audio.entsperre(); App.audio.klang("feier"); });
+
+    // Klatschen erkennen: Quelle wählen, Empfindlichkeit einstellen, 10 Sekunden ausprobieren
+    $("#e-klatschen").addEventListener("change", (ev) => { e.klatschen = ev.target.value; merke(); });
+    $("#e-klatsch-schwelle").addEventListener("input", (ev) => { e.klatschSchwelle = +ev.target.value; $("#e-klatsch-schwelle-wert").textContent = e.klatschSchwelle; merke(); });
+    $("#e-klatsch-test").addEventListener("click", async () => {
+      const anzeige = $("#e-klatsch-anzeige");
+      App.audio.entsperre();
+      let n = 0;
+      anzeige.textContent = "starte …";
+      if (!(await App.klatschen.starte(() => { n++; }))) {
+        anzeige.textContent = e.klatschen === "aus" ? "Bitte zuerst eine Quelle wählen." : "Geht hier leider nicht (siehe Protokoll). Das Tippen auf den Klatsch-Knopf funktioniert immer.";
+        return;
+      }
+      const ende = Date.now() + 10000;
+      const uhr = setInterval(() => {
+        const balken = "█".repeat(Math.round(Math.min(1, App.klatschen.pegel) * 20)).padEnd(20, "░");
+        anzeige.textContent = `Jetzt klatschen!  ${balken}  erkannt: ${n}`;
+        if (Date.now() > ende || $("#eltern").classList.contains("aus")) { clearInterval(uhr); App.klatschen.stoppe(); anzeige.textContent = `Test beendet. Erkannt: ${n} mal.`; }
+      }, 80);
+    });
 
     $("#e-buchstaben-vorgabe").addEventListener("click", () => {
       App.stand.einst.buchstaben = null;

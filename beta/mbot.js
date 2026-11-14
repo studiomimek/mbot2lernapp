@@ -7,7 +7,7 @@
 "use strict";
 
 const MBot = (() => {
-  const VERSION = "0.8.0";
+  const VERSION = "0.9.0";
 
   /* ---------- Konstanten: Makeblock Live-Mode-Protokoll (f3/f4) ---------- */
   const uuid16 = (x) => `0000${x}-0000-1000-8000-00805f9b34fb`;
@@ -311,6 +311,19 @@ const MBot = (() => {
     if (bot.connected) await run("mbot2.EM_stop()");
   }
 
+  /* Beobachtet den Ultraschallsensor dauerhaft und meldet jedes Mal, wenn eine Hand NEU davor auftaucht
+   * (für „Winken zählen“). Läuft, bis weiter() false liefert oder die Verbindung endet. */
+  async function beobachteHand(beiNah, weiter = () => true) {
+    let nah = false;
+    while (bot.connected && weiter()) {
+      let d = NaN;
+      try { d = +(await evalExpr("cyberpi.ultrasonic2.get(1)", 1000, true)); } catch (_) {}
+      if (d > 0 && d < 16) { if (!nah) { nah = true; try { beiNah(d); } catch (_) {} } }
+      else if (!(d > 0) || d > 24) nah = false;
+      await sleep(70);
+    }
+  }
+
   /* ---------- Dauerfahrt (Steuerknüppel, Mitfahren in der Welt) ----------
    * fahre(vor, dreh, tempoMax): vor und dreh von -1 bis 1, tempoMax = Motorleistung in Prozent.
    * Gesendet wird nur, wenn sich der Befehl ändert, und höchstens alle 100 ms. Anhalten geht immer sofort.
@@ -560,7 +573,7 @@ const MBot = (() => {
     verbunden: () => bot.connected,
     verbinde, trenne,
     run, evalExpr,
-    move, tones, stopp, warteAufHand,
+    move, tones, stopp, warteAufHand, beobachteHand,
     fahre, pruefeFein, aufnahme,
     kannFein: () => !!fein,
     epoche: () => epoche,

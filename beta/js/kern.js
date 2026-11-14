@@ -1,7 +1,7 @@
 /* kern.js – Grundgerüst der App: Namensraum, Protokoll, Speicher, Sprache, Töne, Aufnahmen */
 "use strict";
 
-const App = { VERSION: "0.8.0", inhalt: {}, aufgaben: {}, bilder: {} };
+const App = { VERSION: "0.9.0", inhalt: {}, aufgaben: {}, bilder: {} };
 
 (() => {
   /* ---------- Kleine Hilfen ---------- */
@@ -41,14 +41,15 @@ const App = { VERSION: "0.8.0", inhalt: {}, aufgaben: {}, bilder: {} };
   const SCHLUESSEL = "mbot2-lernapp-stand-v1";
   const standard = () => ({
     ort: null,                                    // zuletzt besuchter Ort
-    fund: { muschel: 0, seestern: 0, perle: 0, stern: 0, planet: 0, rakete: 0, feder: 0, flasche: 0, muenze: 0 },   // Fundstücke in der Schatzkiste
+    fund: { muschel: 0, seestern: 0, perle: 0, stern: 0, planet: 0, rakete: 0, feder: 0, flasche: 0, muenze: 0, komet: 0 },   // Fundstücke in der Schatzkiste
     entdeckt: {},                                 // gefundene Entdeckungen in der Welt
     buchstaben: {},                               // "M": { richtig, fehler, gespurt }
     zahlen: {},                                   // "7": { richtig, fehler }
-    mengenStufe: 0, plusStufe: 0, reiheStufe: 0, vergleichStufe: 0,
+    mengenStufe: 0, plusStufe: 0, reiheStufe: 0, vergleichStufe: 0, winkStufe: 0,
     // buchstaben: null = Vorgabe aus inhalt/buchstaben.js, sonst die im Elternbereich gewählte Liste
     einst: { bewegung: true, tempo: 50, lautstaerke: 60, stimme: "", sprechtempo: 0.85, buchstaben: null,
-             mitfahren: true, steuerung: "fein" },   // mitfahren: echter Roboter fährt in der Welt langsam mit
+             mitfahren: true, steuerung: "fein",
+             klatschen: "aus", klatschSchwelle: 0.35 },   // klatschen: "aus" | "ipad" | "roboter" (Mikrofon fürs Silben-Klatschen)   // mitfahren: echter Roboter fährt in der Welt langsam mit
   });
   function lade() {
     const s = standard();
@@ -94,7 +95,9 @@ const App = { VERSION: "0.8.0", inhalt: {}, aufgaben: {}, bilder: {} };
   };
 
   /* ---------- Sprachausgabe (Web Speech API) ---------- */
-  let stimmen = [], sprechNr = 0, haltU = null;
+  let stimmen = [], sprechNr = 0, haltU = null, sprichtBis = 0;
+  // Spricht das iPad gerade? (Dann wird nicht auf Klatschen gehört.)
+  App.spricht = () => performance.now() < sprichtBis;
   App.ladeStimmen = () => {
     if (!("speechSynthesis" in window)) return [];
     stimmen = speechSynthesis.getVoices().filter((v) => (v.lang || "").toLowerCase().startsWith("de"));
@@ -111,6 +114,7 @@ const App = { VERSION: "0.8.0", inhalt: {}, aufgaben: {}, bilder: {} };
   App.sag = (text) => new Promise((fertig) => {
     if (!("speechSynthesis" in window) || !text) return fertig();
     const nr = ++sprechNr;
+    sprichtBis = Infinity;
     try { speechSynthesis.cancel(); } catch (_) {}
     if (!stimmen.length) App.ladeStimmen();
     const u = new SpeechSynthesisUtterance(text);
@@ -119,7 +123,7 @@ const App = { VERSION: "0.8.0", inhalt: {}, aufgaben: {}, bilder: {} };
     if (v) u.voice = v;
     u.rate = +App.stand.einst.sprechtempo || 0.85;
     let zu = false;
-    const ende = () => { if (!zu) { zu = true; fertig(); } };
+    const ende = () => { if (!zu) { zu = true; if (nr === sprechNr) sprichtBis = performance.now() + 350; fertig(); } };
     u.onend = ende;
     u.onerror = ende;                                   // „interrupted“ beim schnellen Weitertippen ist harmlos
     setTimeout(ende, 2500 + text.length * 120);          // falls onend ausbleibt
@@ -160,6 +164,7 @@ const App = { VERSION: "0.8.0", inhalt: {}, aufgaben: {}, bilder: {} };
     } catch (_) {}
   }
   App.audio = {
+    kontext: () => ac,
     // Muss aus einer Berührung heraus aufgerufen werden (iOS gibt Ton und Sprache sonst nicht frei)
     entsperre() {
       try {
@@ -189,6 +194,74 @@ const App = { VERSION: "0.8.0", inhalt: {}, aufgaben: {}, bilder: {} };
       for (const [von, bis, d] of KLAENGE[name] || []) { zirp(von, bis, d, t); t += d + 0.025; }
     },
   };
+
+  /* ---------- Klatschen erkennen (für das Silben-Spiel) ----------
+   * Quelle laut Elternbereich: "ipad" (Mikrofon des iPads, braucht die Erlaubnis des Browsers) oder
+   * "roboter" (Lautstärke-Sensor des CyberPi, wird über Bluetooth abgefragt). Erkannt wird ein kurzer, lauter Knall:
+   * Pegel über der Schwelle und deutlich über dem Grundgeräusch, mindestens 320 ms nach dem letzten.
+   * Während das iPad spricht, wird nicht gehört. sperre() verhindert, dass der eigene Ton mitgezählt wird.
+   */
+  App.klatschen = (() => {
+    let strom = null, uhr = 0, hoerer = null, mittel = 0.02, letzter = 0, lauf = 0;
+    const K = { pegel: 0, quelle: "aus" };
+    function pruefe(pegel) {
+      const jetzt = performance.now();
+      K.pegel = pegel;
+      const schwelle = Math.max(+App.stand.einst.klatschSchwelle || 0.35, mittel * 4);
+      if (pegel > schwelle && jetzt - letzter > 320 && !App.spricht()) { letzter = jetzt; if (hoerer) { try { hoerer(); } catch (_) {} } }
+      mittel = mittel * 0.95 + Math.min(pegel, 0.3) * 0.05;
+    }
+    async function starteIpad() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("Dieser Browser gibt das Mikrofon nicht frei");
+      if (!ac) App.audio.entsperre();
+      if (!strom) strom = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+      const analyser = ac.createAnalyser();
+      analyser.fftSize = 512;
+      ac.createMediaStreamSource(strom).connect(analyser);
+      const buf = new Uint8Array(analyser.fftSize);
+      uhr = setInterval(() => {
+        analyser.getByteTimeDomainData(buf);
+        let max = 0;
+        for (let i = 0; i < buf.length; i++) max = Math.max(max, Math.abs(buf[i] - 128) / 128);
+        pruefe(max);
+      }, 25);
+    }
+    async function starteRoboter(mein) {
+      if (!MBot.verbunden()) throw new Error("Roboter nicht verbunden");
+      await MBot.evalExpr("cyberpi.get_loudness()", 1500);   // antwortet der Sensor überhaupt?
+      (async () => {
+        while (mein === lauf && MBot.verbunden()) {
+          try { pruefe((+(await MBot.evalExpr("cyberpi.get_loudness()", 1000, true)) || 0) / 100); } catch (_) {}
+          await App.warte(40);
+        }
+      })();
+    }
+    // Liefert true, wenn gehört wird. fn wird bei jedem erkannten Klatschen aufgerufen.
+    K.starte = async (fn) => {
+      K.stoppe();
+      K.quelle = App.stand.einst.klatschen || "aus";
+      if (K.quelle === "aus") return false;
+      hoerer = fn; mittel = 0.02;
+      const mein = ++lauf;
+      try {
+        if (K.quelle === "ipad") await starteIpad(); else await starteRoboter(mein);
+        App.log(`Klatschen: höre über ${K.quelle === "ipad" ? "das iPad-Mikrofon" : "das Roboter-Mikrofon"}`);
+        return true;
+      } catch (e) {
+        App.log(`Klatschen erkennen geht nicht (${K.quelle}): ${MBot.hilfen.errText(e)}`, "w");
+        K.stoppe();
+        return false;
+      }
+    };
+    K.stoppe = () => {
+      hoerer = null; lauf++;
+      clearInterval(uhr); uhr = 0;
+      if (strom) { try { strom.getTracks().forEach((t) => t.stop()); } catch (_) {} strom = null; }
+      K.pegel = 0;
+    };
+    K.sperre = (ms = 350) => { letzter = performance.now() + ms - 320; };
+    return K;
+  })();
 
   /* ---------- Eigene Laut-Aufnahmen (audio/laute/m.m4a usw.) ----------
    * Fehlt eine Aufnahme, meldet spiele() false und die Aufgabe weicht auf die Sprachausgabe aus.
@@ -236,7 +309,7 @@ const App = { VERSION: "0.8.0", inhalt: {}, aufgaben: {}, bilder: {} };
 
   // Sprache und Aufnahmen sofort abbrechen
   App.still = () => {
-    sprechNr++;
+    sprechNr++; sprichtBis = performance.now() + 250;
     try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (_) {}
     App.laut.stopp();
   };

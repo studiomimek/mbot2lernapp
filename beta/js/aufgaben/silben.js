@@ -51,7 +51,7 @@
       const klatsch = $(".sb-klatsch", feld), startKnopf = $(".sb-start", feld);
 
       const frage = (lang) => ctx.sag(lang
-        ? `Wie viele Silben hat ${wort}? Klatsche für jede Silbe einmal. Dann starte die Rakete.`
+        ? `Wie viele Silben hat ${wort}? Klatsche für jede Silbe einmal. Dann starte die Rakete${ctx.roboter() ? ": mit dem Knopf oder mit der Hand vor dem Roboter" : ""}.`
         : wort);
       $(".sb-bild", feld).addEventListener("click", () => { if (!gesperrt) frage(false); });
       ctx.wiederhole(() => { if (!gesperrt) frage(true); });
@@ -75,23 +75,37 @@
         frage(runde === 0);
       }
 
-      klatsch.addEventListener("click", () => {
+      // Eine Silbe: Tipp auf den Knopf oder (falls im Elternbereich eingeschaltet) ein echtes Klatschen
+      function klatsche() {
         if (gesperrt) return;
+        App.klatschen.sperre();          // der eigene Ton soll nicht als Klatschen zählen
         if (getippt >= S.hoechstens) { wackle(klatsch); return; }
         getippt++;
         const teil = document.createElement("div");
         teil.className = "sb-teil";
         rakete.insertBefore(teil, $(".sb-spitze", rakete));
         ctx.silbe(getippt - 1);
-      });
+      }
+      klatsch.addEventListener("click", klatsche);
+      App.klatschen.starte(klatsche).then((hoert) => { if (ctx.lebt()) klatsch.classList.toggle("hoert", hoert); else App.klatschen.stoppe(); });
+      ctx.beimEnde(() => App.klatschen.stoppe());
 
-      startKnopf.addEventListener("click", () => {
+      function starte() {
         if (gesperrt) return;
         if (!getippt) { wackle(klatsch); ctx.sag("Klatsche zuerst die Silben."); return; }
         gesperrt = true;
         App.still();
         if (getippt === silben.length) richtig(); else falsch();
-      });
+      }
+      startKnopf.addEventListener("click", starte);
+      // Mit verbundenem Roboter startet die Rakete auch, wenn man die Hand vor seine Augen hält
+      (async () => {
+        while (ctx.lebt()) {
+          const bereit = () => !gesperrt && getippt > 0;
+          if (ctx.roboter() && bereit()) { if (await ctx.hand(2000, bereit)) starte(); }
+          else if (!(await ctx.warte(400))) return;
+        }
+      })();
 
       // Spricht die Silben einzeln und zeigt sie mit Silbenbögen
       async function sprichSilben(mitRakete) {

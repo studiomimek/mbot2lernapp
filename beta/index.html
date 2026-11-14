@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Die Bucht – mBot2-Lernapp</title>
-<link rel="stylesheet" href="stil.css?v=0.8.0">
+<link rel="stylesheet" href="stil.css?v=0.9.0">
 </head>
 <body>
 
@@ -83,6 +83,15 @@
       </section>
 
       <section>
+        <h3>Klatschen erkennen (Silben-Spiel)</h3>
+        <p class="e-hinweis">Das Tippen auf den Klatsch-Knopf geht immer. Zusätzlich kann ein Mikrofon echtes Klatschen mitzählen. Bitte hier ausprobieren, ob es auf diesem Gerät funktioniert.</p>
+        <div class="e-reihe"><span class="e-name">Mikrofon</span><select id="e-klatschen"><option value="aus">aus (nur tippen)</option><option value="ipad">Mikrofon des iPads</option><option value="roboter">Mikrofon des Roboters</option></select><button id="e-klatsch-test" class="e-knopf">10 Sekunden testen</button></div>
+        <div class="e-reihe"><span class="e-name">Schwelle</span><input type="range" id="e-klatsch-schwelle" min="0.1" max="0.8" step="0.05"><span id="e-klatsch-schwelle-wert" class="e-wert"></span></div>
+        <p id="e-klatsch-anzeige" class="e-hinweis" style="font-family:ui-monospace,Menlo,Consolas,monospace"></p>
+        <p class="e-hinweis">Kleinere Schwelle = empfindlicher. Zählt es zu oft (Sprechen, Geräusche), die Schwelle erhöhen.</p>
+      </section>
+
+      <section>
         <h3>Lernstand</h3>
         <div id="e-stufen"></div>
         <pre id="e-stand"></pre>
@@ -102,26 +111,28 @@
 <!-- unsichtbar: zerlegt Strichdaten in Punkte -->
 <svg id="mess" width="0" height="0" aria-hidden="true"><path id="messpfad" d=""/></svg>
 
-<script src="mbot.js?v=0.8.0"></script>
-<script src="js/kern.js?v=0.8.0"></script>
-<script src="js/bilder.js?v=0.8.0"></script>
-<script src="inhalt/buchstaben.js?v=0.8.0"></script>
-<script src="inhalt/mengen.js?v=0.8.0"></script>
-<script src="inhalt/silben.js?v=0.8.0"></script>
-<script src="inhalt/rechnen.js?v=0.8.0"></script>
-<script src="inhalt/woerter.js?v=0.8.0"></script>
-<script src="inhalt/welt.js?v=0.8.0"></script>
-<script src="js/welt.js?v=0.8.0"></script>
-<script src="js/aufgaben/laut-finden.js?v=0.8.0"></script>
-<script src="js/aufgaben/nachspuren.js?v=0.8.0"></script>
-<script src="js/aufgaben/mengen.js?v=0.8.0"></script>
-<script src="js/aufgaben/silben.js?v=0.8.0"></script>
-<script src="js/aufgaben/plus.js?v=0.8.0"></script>
-<script src="js/aufgaben/reihe.js?v=0.8.0"></script>
-<script src="js/aufgaben/steuern.js?v=0.8.0"></script>
-<script src="js/aufgaben/anlaut-bilder.js?v=0.8.0"></script>
-<script src="js/aufgaben/lesen.js?v=0.8.0"></script>
-<script src="js/aufgaben/vergleichen.js?v=0.8.0"></script>
-<script src="js/app.js?v=0.8.0"></script>
+<script src="mbot.js?v=0.9.0"></script>
+<script src="js/kern.js?v=0.9.0"></script>
+<script src="js/bilder.js?v=0.9.0"></script>
+<script src="inhalt/buchstaben.js?v=0.9.0"></script>
+<script src="inhalt/mengen.js?v=0.9.0"></script>
+<script src="inhalt/silben.js?v=0.9.0"></script>
+<script src="inhalt/rechnen.js?v=0.9.0"></script>
+<script src="inhalt/woerter.js?v=0.9.0"></script>
+<script src="inhalt/welt.js?v=0.9.0"></script>
+<script src="js/welt.js?v=0.9.0"></script>
+<script src="js/aufgaben/laut-finden.js?v=0.9.0"></script>
+<script src="js/aufgaben/nachspuren.js?v=0.9.0"></script>
+<script src="js/aufgaben/mengen.js?v=0.9.0"></script>
+<script src="js/aufgaben/silben.js?v=0.9.0"></script>
+<script src="js/aufgaben/plus.js?v=0.9.0"></script>
+<script src="js/aufgaben/reihe.js?v=0.9.0"></script>
+<script src="js/aufgaben/steuern.js?v=0.9.0"></script>
+<script src="js/aufgaben/anlaut-bilder.js?v=0.9.0"></script>
+<script src="js/aufgaben/lesen.js?v=0.9.0"></script>
+<script src="js/aufgaben/vergleichen.js?v=0.9.0"></script>
+<script src="js/aufgaben/countdown.js?v=0.9.0"></script>
+<script src="js/aufgaben/winken.js?v=0.9.0"></script>
+<script src="js/app.js?v=0.9.0"></script>
 </body>
 </html>

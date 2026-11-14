@@ -17,6 +17,11 @@ App.inhalt.rechnen = {
     { name: "mehr oder weniger bis 10", bis: 10 },
     { name: "Zeichen < > = bis 10", bis: 10, zeichen: true },
   ],
+  // Winken: so oft vor dem Roboter winken (oder tippen), wie die Zahl zeigt
+  winken: [
+    { name: "Zahlen bis 5", bis: 5 },
+    { name: "Zahlen bis 10", bis: 10 },
+  ],
   // Zahlenreihe: fünf Zahlen, eine fehlt
   reihe: [
     { name: "vorwärts bis 10", bis: 10, richtung: 1 },

@@ -13,6 +13,7 @@
  *   nachbarn  oben / unten / links / rechts → Name des Nachbarorts
  *   einstiege Figuren, die zu einer Aufgabe führen. Die Aufgabe startet, wenn die Spielfigur darüberfährt.
  *             aufgabe = Modul in js/aufgaben/, figur + symbol = Bilder, x/y = Mitte, fund = Fundstück als Belohnung
+ *   tore      Durchgänge zu Orten, die nicht nebenan liegen: figur = Bild, x/y = Mitte, r = Umkreis, ziel = Ort
  *   entdeckungen  funkelnde Stellen zum Erforschen: Fährt die Figur hin (x/y, Umkreis r), taucht das Bild „zeigt“
  *             an der Stelle „bei“ auf und der Satz „sag“ wird gesprochen. Beliebig viele pro Ort.
  *   bald      true = Ort ist noch nicht gebaut (Pfeil zeigt ein Schloss)
@@ -54,18 +55,21 @@ App.inhalt.welt = {
     },
     raketenstation: {
       name: "Raketenstation", bild: "station", ansage: "An der Raketenstation.", licht: [150, 60, 255],
-      rover: { x: 470, y: 670 }, boden: 500,
+      rover: { x: 600, y: 650 }, boden: 500,
       nachbarn: { links: "strand" },
+      tore: [
+        { id: "raketentuer", x: 560, y: 536, r: 46, figur: "figurTuer", breite: 100, ziel: "rakete" },
+      ],
       einstiege: [
         { id: "silben", titel: "Silben klatschen", aufgabe: "silben", figur: "figurSilben", symbol: "bogen",
-          x: 345, y: 566, breite: 190, fund: "stern", inhalt: { runden: 5 } },
+          x: 200, y: 612, breite: 190, fund: "stern", inhalt: { runden: 5 } },
         { id: "plus", titel: "Plus rechnen", aufgabe: "plus", figur: "figurPlus", symbol: "plus",
-          x: 585, y: 566, breite: 190, fund: "planet", inhalt: { runden: 5 } },
+          x: 385, y: 654, breite: 190, fund: "planet", inhalt: { runden: 5 } },
         { id: "reihe", titel: "Zahlenreihe", aufgabe: "reihe", figur: "figurReihe", symbol: "zahlen",
-          x: 810, y: 566, breite: 200, fund: "rakete", inhalt: { runden: 5 } },
+          x: 800, y: 612, breite: 200, fund: "rakete", inhalt: { runden: 5 } },
       ],
       entdeckungen: [
-        { id: "sternschnuppe", x: 150, y: 640, r: 52, zeigt: "stern", bei: { x: 330, y: 190 }, breite: 90, sag: "Eine Sternschnuppe! Wünsch dir was." },
+        { id: "sternschnuppe", x: 90, y: 700, r: 44, zeigt: "stern", bei: { x: 330, y: 190 }, breite: 90, sag: "Eine Sternschnuppe! Wünsch dir was." },
         { id: "funksignal", x: 934, y: 524, r: 50, zeigt: "funk", bei: { x: 912, y: 250 }, breite: 120, sag: "Piep, piep! Ein Funksignal aus dem All." },
       ],
     },
@@ -82,6 +86,36 @@ App.inhalt.welt = {
       entdeckungen: [
         { id: "fasskrebs", x: 150, y: 690, r: 46, zeigt: "krebs", bei: { x: 150, y: 590 }, breite: 96, sag: "Im Fass wohnt ein Krebs!" },
         { id: "schatzkreuz", x: 758, y: 680, r: 48, zeigt: "muenze", bei: { x: 758, y: 640 }, breite: 80, sag: "Hier ist ein Schatz vergraben. Eine Goldmünze!" },
+      ],
+    },
+    rakete: {
+      name: "In der Rakete", bild: "cockpit", ansage: "In der Rakete.", licht: [255, 255, 255],
+      rover: { x: 470, y: 630 }, boden: 540,
+      tore: [
+        { id: "ausstieg", x: 130, y: 612, r: 50, figur: "figurTuer", breite: 100, ziel: "raketenstation", ansage: "Wieder draußen an der Raketenstation." },
+      ],
+      einstiege: [
+        { id: "startknopf", titel: "Countdown und Start", aufgabe: "countdown", figur: "figurStartknopf", symbol: "zahlen",
+          x: 780, y: 620, breite: 190, inhalt: { ziel: "weltraum" } },
+      ],
+      entdeckungen: [
+        { id: "fensterplanet", x: 440, y: 706, r: 40, zeigt: "planet", bei: { x: 512, y: 180 }, breite: 120, sag: "Im Fenster leuchtet ein Planet." },
+      ],
+    },
+    weltraum: {
+      name: "Weltraum", bild: "weltraum", ansage: "Im Weltraum.", licht: [80, 0, 255],
+      rover: { x: 480, y: 600 }, boden: 110,
+      tore: [
+        { id: "landung", x: 150, y: 590, r: 56, figur: "figurLandung", breite: 96, ziel: "raketenstation", ansage: "Gelandet! Zurück an der Raketenstation." },
+      ],
+      einstiege: [
+        { id: "satellit", titel: "Winken zählen", aufgabe: "winken", figur: "figurSatellit", symbol: "zahlen",
+          x: 640, y: 360, breite: 210, fund: "komet", inhalt: { runden: 5 } },
+      ],
+      entdeckungen: [
+        { id: "komet", x: 356, y: 330, r: 48, zeigt: "stern", bei: { x: 356, y: 250 }, breite: 90, sag: "Ein Komet saust vorbei!" },
+        { id: "erde", x: 180, y: 300, r: 46, zeigt: "funk", bei: { x: 262, y: 140 }, breite: 100, sag: "Die Erde funkt: Hallo, kleiner Roboter!" },
+        { id: "ringplanet", x: 770, y: 560, r: 54, zeigt: "planet", bei: { x: 770, y: 470 }, breite: 100, sag: "Ein Planet mit Ringen!" },
       ],
     },
     wrack: {

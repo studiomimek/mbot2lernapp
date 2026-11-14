@@ -1,8 +1,12 @@
 /* welt.js – zeigt einen Ort und lässt die Spielfigur dem Finger folgen
  *
- * Die Figur fährt dorthin, wo der Finger ist (antippen oder ziehen).
- * Fährt sie auf einen Einstieg und bleibt dort, startet die Aufgabe. Fährt sie auf einen Pfeil, wechselt der Ort.
- * Nur kurz darüber hinwegfahren löst nichts aus.
+ * Die Figur fährt dorthin, wo der Finger ist (antippen oder ziehen). Sie löst aus:
+ *   Einstieg     Aufgabe startet, wenn die Figur darauf stehen bleibt (oder 0,6 s darüberfährt)
+ *   Rand         Fährt die Figur an den Bildrand und der Finger zeigt dorthin, öffnet sich nach kurzem
+ *                Verweilen der Nachbarort; das Bild schiebt sich weiter
+ *   Tor          Durchgang zu einem Ort, der nicht nebenan liegt (z. B. Tür in die Rakete)
+ *   Entdeckung   funkelnde Stelle, löst sofort aus
+ * Eine Zone wird erst „scharf“, wenn die Figur einmal draußen war.
  */
 "use strict";
 
@@ -10,23 +14,32 @@
   const { $ } = App;
   const B = App.bilder;
   const TEMPO = 420;                 // Pixel pro Sekunde
-  const HALB_B = 60, HALB_H = 52;    // halbe Größe der Spielfigur
+  const HALB_B = 50, HALB_H = 43;    // halbe Größe der Spielfigur
+  const FIGUR_MASS = 0.8;            // Einstiege werden etwas kleiner gezeichnet als in den Daten („breite“)
+  const VERWEILEN = 600;             // so lange muss die Figur beim Durchfahren auf einem Einstieg bleiben (ms)
+  const RAND_WARTEN = 300;           // so lange am Rand, bis der Nachbarort aufgeht (ms)
+  const RAND = 16;                   // so nah am Rand gilt als „am Rand“ (Pixel)
   const MITFAHR_TEMPO = 25;          // Motorleistung, mit der der echte Roboter in der Welt mitfährt (langsam)
-  const VERWEILEN = 600;             // so lange muss die Figur beim Durchfahren in einer Zone bleiben (ms)
-  const PFEIL_ORT = { oben: { x: 512, y: 56 }, unten: { x: 512, y: 710 }, links: { x: 58, y: 560 }, rechts: { x: 966, y: 560 } };
+  const GEGEN = { oben: "unten", unten: "oben", links: "rechts", rechts: "links" };
 
-  let ort = null, pos = { x: 512, y: 540 }, ziel = null, zonen = [];
+  let ortId = "", ort = null, pos = { x: 512, y: 540 }, ziel = null, zielRoh = null, zonen = [];
   let lauf = 0, fingerUnten = false, gesperrt = true, eingerichtet = false;
 
   const ortVon = (id) => {
     const W = App.inhalt.welt;
     return W.orte[id] && !W.orte[id].bald ? id : W.start;
   };
-  const begrenze = (p) => ({
-    x: Math.max(HALB_B, Math.min(1024 - HALB_B, p.x)),
-    y: Math.max((ort && ort.boden) || 150, Math.min(716, p.y)),
-  });
-  const inZone = (z, p) => Math.hypot(p.x - z.x, p.y - z.y) <= z.r;
+  const grenzen = () => ({ x0: HALB_B, x1: 1024 - HALB_B, y0: (ort && ort.boden) || 150, y1: 716 });
+  const begrenze = (p) => {
+    const g = grenzen();
+    return { x: Math.max(g.x0, Math.min(g.x1, p.x)), y: Math.max(g.y0, Math.min(g.y1, p.y)) };
+  };
+  const amRand = (richtung, p, spiel = RAND) => {
+    const g = grenzen();
+    return richtung === "links" ? p.x <= g.x0 + spiel : richtung === "rechts" ? p.x >= g.x1 - spiel
+      : richtung === "oben" ? p.y <= g.y0 + spiel : p.y >= g.y1 - spiel;
+  };
+  const kreis = (x, y, r) => (p) => Math.hypot(p.x - x, p.y - y) <= r;
 
   function setze() {
     const r = $("#welt-rover");
@@ -47,65 +60,77 @@
     const finger = (ev) => {
       if (gesperrt) return;
       const r = schicht.getBoundingClientRect();
-      ziel = begrenze({ x: (ev.clientX - r.left) * 1024 / r.width, y: (ev.clientY - r.top) * 768 / r.height });
+      zielRoh = { x: (ev.clientX - r.left) * 1024 / r.width, y: (ev.clientY - r.top) * 768 / r.height };
+      ziel = begrenze(zielRoh);
     };
     schicht.addEventListener("pointerdown", (ev) => { fingerUnten = true; finger(ev); });
     schicht.addEventListener("pointermove", (ev) => { if (fingerUnten) finger(ev); });
     for (const n of ["pointerup", "pointercancel", "pointerleave"]) schicht.addEventListener(n, () => { fingerUnten = false; });
   }
 
-  /* opt.von: Richtung, aus der die Figur kommt („links“ = sie kommt vom linken Rand herein)
-   * opt.bei: Name des Einstiegs, neben dem die Figur stehen soll (nach einer Aufgabe)
+  function baue(klasse, x, y, breite, html) {
+    const el = document.createElement("div");
+    el.className = klasse;
+    el.style.left = `${x}px`; el.style.top = `${y}px`;
+    if (breite) el.style.width = `${breite}px`;
+    el.innerHTML = html;
+    $("#welt").appendChild(el);
+    return el;
+  }
+
+  /* opt.von:    Seite, an der die Figur hereinkommt („links“ = sie kommt vom linken Rand)
+   * opt.pos:    Stelle, an der sie den alten Ort verlassen hat (damit sie auf gleicher Höhe ankommt)
+   * opt.bei:    Name des Einstiegs, neben dem die Figur stehen soll (nach einer Aufgabe)
+   * opt.aus:    Ort, aus dem sie durch ein Tor kommt (sie steht dann neben dem Tor dorthin zurück)
+   * opt.rein:   Art der Einblendung (Richtung oder „tor“)
    * opt.ansage: wird gesprochen */
   function zeige(id, opt = {}) {
     id = ortVon(id);
     const W = App.inhalt.welt;
-    ort = W.orte[id];
+    ortId = id; ort = W.orte[id];
     richteEin();
     const schicht = $("#welt");
-    schicht.className = `schicht ort-${id}`;
+    schicht.className = `schicht ort-${id} rein-${opt.rein || "start"}`;
     schicht.innerHTML = `<div class="ort-bild">${B[ort.bild]()}</div>`;
     zonen = [];
+    const g = grenzen();
 
     for (const e of ort.einstiege || []) {
-      const el = document.createElement("div");
-      el.className = "einstieg";
-      el.style.left = `${e.x}px`; el.style.top = `${e.y}px`; el.style.width = `${e.breite}px`;
-      el.innerHTML = `<span class="einstieg-ring"></span>${B[e.figur]()}<span class="abzeichen">${B.symbol(e.symbol)}</span>`;
-      schicht.appendChild(el);
-      zonen.push({ art: "einstieg", e, el, x: e.x, y: e.y + 8, r: Math.max(66, e.breite * 0.3) });
+      const b = e.breite * FIGUR_MASS, r = Math.max(52, b * 0.34);
+      const el = baue("einstieg", e.x, e.y, b, `<span class="einstieg-ring"></span>${B[e.figur]()}<span class="abzeichen">${B.symbol(e.symbol)}</span>`);
+      zonen.push({ art: "einstieg", e, el, x: e.x, y: e.y + 6, r, drin: kreis(e.x, e.y + 6, r) });
+    }
+    for (const t of ort.tore || []) {
+      const el = baue("einstieg tor", t.x, t.y, t.breite || 110, `<span class="einstieg-ring"></span>${B[t.figur]()}`);
+      zonen.push({ art: "tor", t, el, x: t.x, y: t.y, r: t.r || 52, drin: kreis(t.x, t.y, t.r || 52) });
     }
     for (const [richtung, zielId] of Object.entries(ort.nachbarn || {})) {
       const zielOrt = W.orte[zielId];
       if (!zielOrt) continue;
-      const el = document.createElement("div");
-      el.className = `pfeil pfeil-${richtung}${zielOrt.bald ? " bald" : ""}`;
-      el.innerHTML = B.pfeil(richtung) + (zielOrt.bald ? `<span class="schloss">${B.schloss()}</span>` : "");
-      schicht.appendChild(el);
-      zonen.push({ art: "pfeil", richtung, zielId, bald: !!zielOrt.bald, el, x: PFEIL_ORT[richtung].x, y: PFEIL_ORT[richtung].y, r: 58 });
+      const mitte = (g.y0 + g.y1) / 2;
+      const [x, y] = { oben: [512, 40], unten: [512, 734], links: [36, mitte], rechts: [988, mitte] }[richtung];
+      const el = baue(`pfeil${zielOrt.bald ? " bald" : ""}`, x, y, 0, B.pfeil(richtung) + (zielOrt.bald ? `<span class="schloss">${B.schloss()}</span>` : ""));
+      zonen.push({ art: "rand", richtung, zielId, bald: !!zielOrt.bald, el, drin: (p) => amRand(richtung, p) });
     }
-
     for (const f of ort.entdeckungen || []) {
-      const el = document.createElement("div");
-      el.className = "funkeln";
-      el.style.left = `${f.x}px`; el.style.top = `${f.y}px`;
-      schicht.appendChild(el);
-      zonen.push({ art: "fund", f, el, x: f.x, y: f.y, r: f.r || 54 });
+      const el = baue("funkeln", f.x, f.y, 0, "");
+      zonen.push({ art: "fund", f, el, drin: kreis(f.x, f.y, f.r || 54) });
     }
-
     schicht.insertAdjacentHTML("beforeend", `<div id="welt-ziel"></div><div id="welt-rover" class="rover">${B.rover()}</div>`);
 
     // Startplatz der Figur
     let start = ort.rover || { x: 512, y: 540 };
-    const einstieg = zonen.find((z) => z.art === "einstieg" && z.e.id === opt.bei);
-    if (einstieg) start = { x: einstieg.x, y: einstieg.y + einstieg.r + 70 };
-    else if (opt.von && PFEIL_ORT[opt.von]) {
-      const p = PFEIL_ORT[opt.von];
-      start = { x: p.x + (opt.von === "links" ? 130 : opt.von === "rechts" ? -130 : 0), y: p.y + (opt.von === "oben" ? 150 : opt.von === "unten" ? -150 : 0) };
+    const neben = zonen.find((z) => (z.art === "einstieg" && z.e.id === opt.bei) || (z.art === "tor" && opt.aus && z.t.ziel === opt.aus));
+    if (neben) start = { x: neben.x, y: neben.y + neben.r + 62 };
+    else if (opt.von) {
+      const p = opt.pos || start;
+      start = opt.von === "links" ? { x: g.x0 + 120, y: p.y } : opt.von === "rechts" ? { x: g.x1 - 120, y: p.y }
+        : opt.von === "oben" ? { x: p.x, y: g.y0 + 110 } : { x: p.x, y: g.y1 - 110 };
     }
     pos = begrenze(start);
-    ziel = null; fingerUnten = false; gesperrt = false;
-    for (const z of zonen) z.scharf = !inZone(z, pos);   // erst scharf, wenn die Figur einmal draußen war
+    if (neben && neben.drin(pos)) pos = begrenze({ x: neben.x + neben.r + 70, y: neben.y });   // unten war kein Platz
+    ziel = null; zielRoh = null; fingerUnten = false; gesperrt = false;
+    for (const z of zonen) { z.scharf = !z.drin(pos); z.seit = 0; }   // erst scharf, wenn die Figur einmal draußen war
     setze();
 
     if (App.stand.ort !== id) { App.stand.ort = id; App.speichere(); }
@@ -136,39 +161,46 @@
       fuhr = faehrt;
 
       for (const z of zonen) {
-        if (!inZone(z, pos)) { z.scharf = true; z.seit = 0; z.el.classList.remove("nah"); continue; }
+        if (!z.drin(pos)) { z.scharf = true; z.seit = 0; z.el.classList.remove("nah"); continue; }
         if (!z.scharf) continue;
+        // Am Rand zählt es nur, wenn der Finger wirklich zum Rand zeigt (sonst fährt man nur daran entlang)
+        if (z.art === "rand" && !(zielRoh && amRand(z.richtung, zielRoh, 44))) { z.seit = 0; z.el.classList.remove("nah"); continue; }
         if (!z.seit) { z.seit = jetzt; z.el.classList.add("nah"); }
-        if (z.art === "fund" || !faehrt || jetzt - z.seit > VERWEILEN) { if (loeseAus(z)) return; }
+        const warten = z.art === "fund" ? 0 : z.art === "rand" ? RAND_WARTEN : faehrt ? VERWEILEN : 120;
+        if (jetzt - z.seit >= warten && loeseAus(z)) return;
       }
       App.naechstesBild(schritt);
     }
     App.naechstesBild(schritt);
   }
 
-  // true = die Welt wird verlassen, die Schleife endet
+  // true = der Ort wird verlassen, die Schleife endet
   function loeseAus(z) {
     z.scharf = false; z.seit = 0;
     z.el.classList.remove("nah");
     if (z.art === "fund") { entdecke(z.f); return false; }
-    if (z.art === "pfeil" && z.bald) {
+    if (z.art === "rand" && z.bald) {
       z.el.classList.remove("wackel"); void z.el.offsetWidth; z.el.classList.add("wackel");
       App.sag("Dort geht es bald weiter.");
       return false;
     }
     gesperrt = true; ziel = null; lauf++;
     MBot.fahre(0, 0);
-    App.audio.klang("neugierig");
     const rover = $("#welt-rover");
     if (rover) rover.classList.remove("faehrt");
+    const W = App.inhalt.welt, schicht = $("#welt"), von = ortId, stelle = { x: pos.x, y: pos.y };
     if (z.art === "einstieg") {
+      App.audio.klang("neugierig");
       z.el.classList.add("gewaehlt");
       setTimeout(() => App.starteAufgabe(z.e), 350);
+    } else if (z.art === "rand") {
+      App.audio.klang("tipp");
+      schicht.classList.add(`raus-${z.richtung}`);
+      setTimeout(() => zeige(z.zielId, { von: GEGEN[z.richtung], pos: stelle, rein: z.richtung, ansage: W.orte[z.zielId].ansage }), 220);
     } else {
-      const W = App.inhalt.welt;
-      $("#welt").classList.add("blende");
-      const gegen = { oben: "unten", unten: "oben", links: "rechts", rechts: "links" }[z.richtung];
-      setTimeout(() => zeige(z.zielId, { von: gegen, ansage: W.orte[z.zielId].ansage }), 320);
+      App.audio.klang("neugierig");
+      schicht.classList.add("raus-tor");
+      setTimeout(() => zeige(z.t.ziel, { aus: von, rein: "tor", ansage: z.t.ansage || W.orte[z.t.ziel].ansage }), 260);
     }
     return true;
   }
@@ -176,12 +208,8 @@
   // Entdeckung: Bild taucht auf, Satz wird gesprochen, der Roboter staunt
   function entdecke(f) {
     App.audio.klang("staunen");
-    const el = document.createElement("div");
-    el.className = "fundbild";
-    el.style.left = `${f.bei.x}px`; el.style.top = `${f.bei.y}px`; el.style.width = `${f.breite || 90}px`;
+    const el = baue("fundbild", f.bei.x, f.bei.y, f.breite || 90, B[f.zeigt]());
     if (f.farbe) el.style.color = f.farbe;
-    el.innerHTML = B[f.zeigt]();
-    $("#welt").appendChild(el);
     setTimeout(() => el.remove(), 2800);
     if (f.sag) App.sag(f.sag);
     MBot.reaktion.staunen();
@@ -189,7 +217,7 @@
   }
 
   // Wird aufgerufen, wenn die Welt verdeckt wird (z. B. Elternbereich): Figur bleibt stehen
-  function halt() { ziel = null; fingerUnten = false; MBot.fahre(0, 0); }
+  function halt() { ziel = null; zielRoh = null; fingerUnten = false; MBot.fahre(0, 0); }
 
   App.welt = { zeige, halt };
 })();
