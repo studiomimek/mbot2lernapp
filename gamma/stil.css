@@ -1,0 +1,994 @@
+/* stil.css – Aussehen der App. Die Bühne ist fest 1024 × 768 groß und wird als Ganzes auf den Bildschirm skaliert. */
+
+@font-face {
+  font-family: "Grundschrift";
+  src: url("schrift/PlaywriteDEGrund.ttf") format("truetype");
+  font-weight: 100 400;
+  font-display: swap;
+}
+
+:root {
+  --himmel: #bfe6ee; --sonne: #f9c23c; --papier: #fff8ea; --tinte: #23324a;
+  --sand: #f2d9a0; --sand2: #e2c483; --meer: #2f9fb5; --tief: #176b87;
+  --koralle: #f0715b; --blatt: #3f9b6c; --rot: #d44343;
+  --schatten: 0 5px 0 rgba(35, 50, 74, .2);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0f4f66; }
+body {
+  font: 17px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--tinte);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-text-size-adjust: 100%;
+}
+
+#buehne {
+  position: absolute; left: 50%; top: 50%; width: 1024px; height: 768px; margin: -384px 0 0 -512px;
+  transform: scale(var(--s, 1)); overflow: hidden; background: var(--himmel); touch-action: none;
+}
+.schicht { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; }
+.aus { display: none !important; }
+
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; margin: 0; cursor: pointer; touch-action: manipulation; }
+button svg, .rover svg, .abzeichen svg, .schloss svg { display: block; width: 100%; height: auto; pointer-events: none; }
+.papier { background: var(--papier); box-shadow: var(--schatten); }
+
+/* Was in welchem Modus zu sehen ist */
+#buehne:not([data-modus="welt"]) .nur-welt,
+#buehne:not([data-modus="aufgabe"]) .nur-aufgabe,
+#buehne:not([data-modus="welt"]) #welt,
+#buehne:not([data-modus="aufgabe"]) #aufgabe,
+#buehne[data-modus="start"] #btn-robo,
+#buehne:not([data-robo="on"]) #btn-stopp { display: none; }
+
+/* ---------- Bewegungen ---------- */
+@keyframes einblenden { from { opacity: 0; } to { opacity: 1; } }
+@keyframes puls { 0%, 100% { transform: translate(-50%, -50%) scale(.9); opacity: .55; } 50% { transform: translate(-50%, -50%) scale(1.12); opacity: .2; } }
+@keyframes wackel { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-10px); } 40% { transform: translateX(10px); } 60% { transform: translateX(-7px); } 80% { transform: translateX(7px); } }
+@keyframes huepf { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(-26px); } 55% { transform: translateY(0); } 75% { transform: translateY(-12px); } }
+@keyframes nick { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+@keyframes schwimm { 0%, 100% { transform: translateY(-5px); } 50% { transform: translateY(5px); } }
+@keyframes reinkommen { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+@keyframes reinschwimmen { from { opacity: 0; transform: translateX(70px); } to { opacity: 1; transform: none; } }
+@keyframes plopp { 0% { transform: scale(.2) rotate(-25deg); opacity: 0; } 60% { transform: scale(1.15) rotate(6deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+@keyframes drehen { to { transform: rotate(360deg); } }
+@keyframes wiegen { 0%, 100% { transform: skewX(-3deg); } 50% { transform: skewX(3deg); } }
+@keyframes steigen { 0% { transform: translateY(40px); opacity: 0; } 20% { opacity: .5; } 100% { transform: translateY(-220px); opacity: 0; } }
+
+.wackel { animation: wackel .45s; }
+.huepf { animation: huepf .7s; }
+.tang { transform-box: fill-box; transform-origin: 50% 100%; animation: wiegen 5s ease-in-out infinite; }
+.blasen circle { animation: steigen 6s linear infinite; }
+.blasen circle:nth-child(2n) { animation-delay: -2.5s; animation-duration: 7.5s; }
+.blasen circle:nth-child(3n) { animation-delay: -4s; }
+
+/* ---------- Welt ---------- */
+.ort-bild { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; }
+.ort-bild svg { display: block; width: 1024px; height: 768px; }
+/* Ortswechsel: Das alte Bild rutscht weg, das neue schiebt sich aus der Fahrtrichtung herein */
+@keyframes rausLinks { to { transform: translateX(24%); opacity: 0; } }
+@keyframes rausRechts { to { transform: translateX(-24%); opacity: 0; } }
+@keyframes rausOben { to { transform: translateY(24%); opacity: 0; } }
+@keyframes rausUnten { to { transform: translateY(-24%); opacity: 0; } }
+@keyframes reinLinks { from { transform: translateX(-24%); opacity: 0; } }
+@keyframes reinRechts { from { transform: translateX(24%); opacity: 0; } }
+@keyframes reinOben { from { transform: translateY(-24%); opacity: 0; } }
+@keyframes reinUnten { from { transform: translateY(24%); opacity: 0; } }
+@keyframes rausTor { to { transform: scale(1.25); opacity: 0; } }
+@keyframes reinTor { from { transform: scale(.85); opacity: 0; } }
+#welt.raus-links { animation: rausLinks .22s ease-in forwards; }
+#welt.raus-rechts { animation: rausRechts .22s ease-in forwards; }
+#welt.raus-oben { animation: rausOben .22s ease-in forwards; }
+#welt.raus-unten { animation: rausUnten .22s ease-in forwards; }
+#welt.raus-tor { animation: rausTor .26s ease-in forwards; }
+#welt.rein-links { animation: reinLinks .32s ease-out; }
+#welt.rein-rechts { animation: reinRechts .32s ease-out; }
+#welt.rein-oben { animation: reinOben .32s ease-out; }
+#welt.rein-unten { animation: reinUnten .32s ease-out; }
+#welt.rein-tor { animation: reinTor .32s ease-out; }
+#welt.rein-start { animation: einblenden .35s; }
+
+.einstieg { position: absolute; transform: translate(-50%, -50%); }
+.einstieg > svg { position: relative; filter: drop-shadow(0 5px 0 rgba(35, 50, 74, .18)); }
+.einstieg > svg { transition: transform .2s; }
+.einstieg.nah > svg { transform: scale(1.1); }
+.einstieg.nah .einstieg-ring { background: var(--sonne); }
+.einstieg.gewaehlt > svg { transform: scale(1.2); }
+.einstieg-ring {
+  position: absolute; left: 50%; top: 56%; width: 112%; padding-bottom: 64%; border-radius: 50%;
+  background: #fff; animation: puls 2.4s ease-in-out infinite;
+}
+.abzeichen {
+  position: absolute; right: -8px; top: -12px; width: 48px; height: 48px; padding: 7px; border-radius: 50%;
+  background: var(--papier); box-shadow: var(--schatten);
+}
+
+.pfeil {
+  position: absolute; width: 56px; height: 56px; padding: 6px; border-radius: 50%; transform: translate(-50%, -50%); opacity: .85; pointer-events: none;
+  background: var(--papier); box-shadow: var(--schatten);
+}
+.pfeil { transition: transform .2s; }
+.pfeil.nah { transform: translate(-50%, -50%) scale(1.3); opacity: 1; background: var(--sonne); }
+.pfeil-unten { left: 470px; bottom: 16px; }
+.pfeil-oben { left: 470px; top: 14px; }
+.pfeil-rechts { right: 16px; top: 518px; }
+.pfeil-links { left: 16px; top: 518px; }
+.pfeil.bald { opacity: .8; }
+.pfeil.bald.wackel { animation: wackel .45s; }
+.pfeil .schloss { position: absolute; right: -8px; bottom: -8px; width: 40px; height: 40px; }
+
+.rover { filter: drop-shadow(0 5px 0 rgba(35, 50, 74, .2)); }
+#welt-spur { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; pointer-events: none; }
+#welt-rover { position: absolute; left: 0; top: 0; width: 100px; pointer-events: none; will-change: transform; z-index: 3; }
+#welt-rover.faehrt svg { animation: rollen .28s linear infinite; }
+#welt-ziel {
+  position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%; display: none; pointer-events: none;
+  border: 5px solid rgba(255, 255, 255, .85); background: rgba(255, 255, 255, .3);
+}
+/* Unter Wasser fährt die Figur in einer Luftblase */
+.ort-riff #welt-rover::after, .ort-wrack #welt-rover::after, .ort-weltraum #welt-rover::after {
+  content: ""; position: absolute; left: -14%; top: -24%; width: 128%; padding-bottom: 128%; border-radius: 50%;
+  border: 5px solid rgba(255, 255, 255, .6); background: rgba(255, 255, 255, .14);
+}
+
+/* ---------- Knöpfe am Rand ---------- */
+.knopf {
+  position: absolute; width: 78px; height: 78px; padding: 12px; border-radius: 50%; z-index: 5;
+  background: var(--papier); box-shadow: var(--schatten);
+}
+.knopf:active { transform: scale(.94); }
+#btn-truhe { left: 16px; top: 14px; width: 88px; height: 88px; padding: 12px; }
+#truhe-zahl {
+  position: absolute; right: -8px; bottom: -6px; min-width: 38px; height: 38px; padding: 0 8px; border-radius: 19px;
+  background: var(--koralle); color: #fff; font: 700 22px/38px -apple-system, "Segoe UI", sans-serif; text-align: center;
+}
+#btn-zurueck { left: 16px; top: 14px; }
+#btn-nochmal { left: 108px; top: 14px; }
+#btn-robo { right: 16px; top: 14px; padding: 13px 11px 9px; }
+#robo-licht {
+  position: absolute; right: 0; top: 0; width: 24px; height: 24px; border-radius: 50%;
+  background: #aab2bd; border: 4px solid var(--papier);
+}
+#buehne[data-robo="on"] #robo-licht { background: #1d9a54; }
+#buehne[data-robo="busy"] #robo-licht { background: var(--sonne); animation: einblenden .5s infinite alternate; }
+#buehne[data-robo="err"] #robo-licht { background: var(--rot); }
+#btn-stopp {
+  position: absolute; right: 108px; top: 14px; height: 78px; padding: 0 26px; border-radius: 39px; z-index: 6;
+  background: var(--rot); color: #fff; font: 800 24px/78px -apple-system, "Segoe UI", sans-serif; letter-spacing: .04em;
+  box-shadow: 0 5px 0 #8f2424;
+}
+#btn-stopp:active { transform: translateY(3px); box-shadow: 0 2px 0 #8f2424; }
+
+#punkte { position: absolute; left: 0; width: 1024px; top: 28px; height: 48px; display: flex; justify-content: center; align-items: center; gap: 14px; z-index: 4; pointer-events: none; }
+#punkte i { width: 24px; height: 24px; border-radius: 50%; background: rgba(255, 248, 234, .55); border: 4px solid var(--papier); }
+#punkte i.voll { background: var(--koralle); }
+#punkte i.jetzt { background: var(--sonne); transform: scale(1.2); }
+/* Gelöste Aufgabe: Der Punkt wird zum Fundstück */
+#punkte i.fund { width: 46px; height: 46px; border: 0; border-radius: 0; background: none; filter: drop-shadow(0 3px 0 rgba(35, 50, 74, .25)); }
+#punkte i.fund svg { display: block; width: 100%; height: 100%; }
+#punkte i.fund.neu { animation: plopp .6s backwards; }
+
+/* Griff zum Elternbereich (unten rechts, eine Sekunde halten) */
+#eltern-griff {
+  position: absolute; right: 0; bottom: 0; padding: 14px 12px 10px 26px; z-index: 12; touch-action: none;
+  display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(35, 50, 74, .6);
+}
+#buehne[data-modus="aufgabe"] #eltern-griff { display: none; }
+#buehne:not([data-modus="start"]) #eltern-hinweis { display: none; }
+#eltern-hinweis { font-size: 14px; }
+#eltern-zahnrad { width: 40px; height: 40px; padding: 5px; border-radius: 50%; background: rgba(255, 248, 234, .7); opacity: .75; }
+#eltern-zahnrad svg { display: block; width: 100%; height: 100%; }
+#eltern-griff.haelt #eltern-zahnrad { opacity: 1; background: var(--sonne); animation: drehen 1s linear; }
+
+/* ---------- Startbild ---------- */
+#start {
+  z-index: 9; text-align: center;
+  background: linear-gradient(var(--himmel) 0 60%, var(--meer) 60% 72%, var(--sand) 72%);
+}
+#start h1 { margin: 60px 0 0; font: 400 104px/1.5 "Grundschrift", "Segoe Print", cursive; color: var(--tinte); }
+#start-rover { position: absolute; left: 392px; top: 300px; width: 240px; animation: schwimm 3s ease-in-out infinite; }
+#btn-los {
+  position: absolute; left: 437px; top: 566px; width: 150px; height: 150px; padding: 30px; border-radius: 50%;
+  background: var(--koralle); box-shadow: 0 8px 0 #b94a38;
+}
+#btn-los:active { transform: translateY(5px); box-shadow: 0 3px 0 #b94a38; }
+/* Erst der Start-Knopf, dann die Bilder der Spieler */
+#start[data-schritt="wahl"] #btn-los, #start:not([data-schritt="wahl"]) #start-spieler { display: none; }
+/* Wer spielt? Ein Bild pro Spieler */
+#start-spieler { position: absolute; left: 0; top: 566px; width: 1024px; height: 150px; display: flex; justify-content: center; align-items: center; gap: 20px; }
+.spieler {
+  width: 124px; height: 124px; padding: 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--papier); box-shadow: 0 8px 0 rgba(35, 50, 74, .25); animation: plopp .45s backwards;
+}
+.spieler svg { width: 100%; height: auto; max-height: 100%; }
+.spieler:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(35, 50, 74, .25); }
+.spieler.frei { border: 6px dashed var(--sand2); box-shadow: none; }
+.spieler.klein { width: 84px; height: 84px; padding: 20px; background: rgba(255, 248, 234, .75); font: 700 56px/1 -apple-system, "Segoe UI", sans-serif; color: var(--tinte); }
+.bild-fisch { color: var(--sonne); }
+.e-spielerbild { width: 44px; height: 44px; display: flex; align-items: center; }
+.e-spielerbild svg { display: block; width: 100%; height: auto; }
+
+/* ---------- Rahmen einer Aufgabe ---------- */
+.feld { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; }
+.rover-aufgabe { position: absolute; left: 24px; top: 612px; width: 132px; pointer-events: none; }
+.rover-aufgabe.freu { animation: huepf .7s 2; }
+.rover-aufgabe.denk { animation: nick .6s; }
+
+/* ---------- Aufgabe: Laut finden ---------- */
+.lf-frage { position: absolute; left: 412px; top: 100px; width: 200px; height: 200px; border-radius: 50%; }
+.lf-frage:active { transform: scale(.96); }
+.lf-bild { display: block; font-size: 112px; line-height: 200px; text-align: center; }
+.lf-ton { position: absolute; right: -4px; bottom: -4px; width: 64px; height: 64px; padding: 12px; border-radius: 50%; background: var(--sonne); box-shadow: var(--schatten); }
+.lf-frage.nur-ton .lf-bild { display: none; }
+.lf-frage.nur-ton .lf-ton { right: 40px; bottom: 40px; width: 120px; height: 120px; padding: 24px; }
+
+.lf-krebse { position: absolute; left: 0; top: 330px; width: 1024px; display: flex; justify-content: center; gap: 50px; }
+.lf-krebs { width: 230px; display: flex; flex-direction: column; align-items: center; }
+.lf-krebs.kommt { animation: reinkommen .45s backwards; }
+.lf-krebs > svg { width: 196px; margin-top: -6px; filter: drop-shadow(0 5px 0 rgba(35, 50, 74, .18)); }
+.lf-karte {
+  display: flex; align-items: center; justify-content: center; gap: 14px; width: 200px; height: 150px; border-radius: 30px;
+  font: 400 74px/1 "Grundschrift", "Segoe Print", cursive; color: var(--tinte); border: 6px solid transparent;
+}
+.lf-karte small { font-size: inherit; }
+.lf-krebs:active .lf-karte { transform: scale(.96); }
+.lf-krebs.richtig .lf-karte { background: #c9efc4; border-color: #1d9a54; }
+.lf-krebs.richtig { animation: huepf .7s 2; }
+.lf-krebs.falsch { animation: wackel .45s; opacity: .4; }
+
+/* ---------- Aufgabe: Nachspuren ---------- */
+.ns-tafel {
+  position: absolute; left: 252px; top: 104px; width: 520px; height: 600px; border-radius: 40px;
+  background: #e6c98a; box-shadow: inset 0 6px 0 rgba(35, 50, 74, .12), 0 0 0 8px rgba(255, 248, 234, .5);
+}
+.ns-tafel.geschafft { box-shadow: inset 0 6px 0 rgba(35, 50, 74, .12), 0 0 0 10px #8fdc9a; }
+.ns-leinwand { display: block; width: 520px; height: 600px; border-radius: 40px; touch-action: none; }
+.ns-vorbild {
+  position: absolute; left: 808px; top: 130px; width: 180px; height: 190px; border-radius: 30px;
+  display: flex; align-items: center; justify-content: center;
+  font: 400 104px/1 "Grundschrift", "Segoe Print", cursive; color: var(--tinte);
+}
+.ns-zeig { left: 853px; top: 356px; width: 90px; height: 90px; padding: 14px; background: var(--sonne); }
+
+/* ---------- Aufgabe: Mengen ---------- */
+.mg-becken { position: absolute; left: 122px; top: 100px; width: 780px; height: 440px; }
+.mg-fisch { position: absolute; width: 108px; height: 66px; transition: color .2s; }
+.mg-fisch.kommt { animation: reinschwimmen .5s backwards; }
+.mg-fisch span { display: block; animation: schwimm 3s ease-in-out infinite; }
+.mg-fisch.gezaehlt { color: var(--papier) !important; }
+.mg-fisch.gezaehlt span, .mg-fisch.auf span { animation: none; transform: scale(1.12); }
+.mg-fisch.auf { color: var(--sonne) !important; animation: huepf .6s; }
+.mg-wuerfel {
+  position: absolute; left: 190px; top: 20px; width: 400px; height: 400px; border-radius: 56px;
+  background: rgba(255, 248, 234, .16); border: 6px solid rgba(255, 248, 234, .45);
+}
+.mg-zehnerfeld {
+  position: absolute; left: 60px; top: 96px; width: 660px; height: 248px; display: grid;
+  grid-template-columns: repeat(5, 132px); grid-template-rows: repeat(2, 124px);
+  border-radius: 26px; overflow: hidden; border: 5px solid rgba(255, 248, 234, .55); box-sizing: content-box; margin: -5px;
+}
+.mg-zehnerfeld i { background: rgba(255, 248, 234, .13); border: 2.5px solid rgba(255, 248, 234, .45); }
+
+.mg-steine { position: absolute; left: 0; top: 566px; width: 1024px; display: flex; justify-content: center; gap: 30px; }
+.mg-stein {
+  width: 136px; height: 122px; border-radius: 48% 52% 50% 50% / 56% 54% 46% 44%;
+  background: #e3e9ec; box-shadow: 0 7px 0 #9fb0b8; border: 6px solid transparent;
+  font: 400 62px/1 "Grundschrift", "Segoe Print", cursive; color: var(--tinte);
+}
+.mg-stein:nth-child(2n) { border-radius: 52% 48% 46% 54% / 50% 56% 44% 50%; background: #d5dee3; }
+.mg-stein:active { transform: translateY(4px); box-shadow: 0 3px 0 #9fb0b8; }
+.mg-stein.richtig { background: #c9efc4; border-color: #1d9a54; animation: huepf .7s; }
+.mg-stein.falsch { animation: wackel .45s; opacity: .35; }
+
+/* ---------- Feier und Schatzkiste ---------- */
+#feier { z-index: 8; background: rgba(18, 90, 115, .93); animation: einblenden .25s; overflow: hidden; }
+.feier-strahlen {
+  position: absolute; left: -88px; top: -216px; width: 1200px; height: 1200px; border-radius: 50%;
+  background: repeating-conic-gradient(rgba(249, 194, 60, .5) 0 15deg, rgba(249, 194, 60, 0) 15deg 30deg);
+  animation: drehen 14s linear infinite;
+}
+.feier-reihe { position: absolute; left: 0; top: 204px; width: 1024px; height: 360px; display: flex; justify-content: center; align-items: center; gap: 24px; }
+.feier-reihe span { animation: plopp .7s backwards; filter: drop-shadow(0 10px 0 rgba(35, 50, 74, .3)); }
+.feier-reihe svg { display: block; width: 100%; height: auto; }
+.truhe-blick { position: absolute; left: 162px; top: 110px; width: 700px; min-height: 420px; padding: 24px 30px 34px; border-radius: 40px; animation: plopp .45s backwards; }
+.truhe-kopf { width: 130px; margin: 0 auto 14px; }
+.truhe-kopf svg, .truhe-reihe svg { display: block; width: 100%; height: auto; }
+.truhe-reihe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.truhe-reihe span { width: 56px; }
+.truhe-reihe b { font-size: 26px; margin-left: 8px; }
+.truhe-leer { height: 150px; border: 5px dashed var(--sand2); border-radius: 26px; }
+
+/* ---------- Elternbereich ---------- */
+#eltern { z-index: 20; background: var(--papier); }
+.e-inhalt {
+  position: absolute; left: 0; top: 0; width: 1024px; height: 768px; overflow-y: auto; padding: 22px 34px 60px;
+  -webkit-overflow-scrolling: touch; touch-action: pan-y;
+}
+.e-kopf { display: flex; align-items: center; gap: 18px; }
+.e-kopf h2 { margin: 0; font-size: 28px; flex: none; }
+.e-version { flex: 1; color: #6a7280; font-size: 14px; }
+#eltern section { margin-top: 18px; padding: 16px 20px; border-radius: 18px; background: #fff; border: 1px solid #e4dfd5; }
+#eltern h3 { margin: 0 0 8px; font-size: 19px; }
+#eltern p { margin: 6px 0; }
+.e-reihe { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+.e-name { width: 170px; font-weight: 600; }
+.e-wert { width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+.e-knopf { min-height: 50px; padding: 8px 18px; border-radius: 12px; background: #e4dfd5; font-weight: 600; }
+.e-knopf:disabled { opacity: .4; }
+.e-knopf.e-haupt { background: #2e6ad8; color: #fff; }
+.e-knopf.e-rot { background: var(--rot); color: #fff; }
+.e-haken { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-weight: 600; }
+.e-haken input { width: 26px; height: 26px; }
+#eltern input[type=range] { flex: 1; min-width: 200px; height: 34px; }
+#eltern select { flex: 1; min-height: 48px; font: inherit; border-radius: 10px; border: 1px solid #e4dfd5; background: var(--papier); padding: 6px 10px; }
+.e-hinweis { color: #6a7280; font-size: 14.5px; }
+.e-warn { background: #fde8e8; color: #8a1f1f; border-radius: 10px; padding: 10px 12px; }
+#eltern pre { margin: 10px 0 0; white-space: pre-wrap; word-break: break-word; font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; }
+#e-stand { background: var(--papier); border-radius: 10px; padding: 10px 12px; }
+#e-log { height: 230px; overflow: auto; background: #0f1218; color: #cfe3cf; border-radius: 10px; padding: 10px 12px; -webkit-user-select: text; user-select: text; touch-action: pan-y; }
+
+/* ---------- v0.7: Welt erforschen ---------- */
+@keyframes rollen { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-3px) rotate(1.5deg); } }
+@keyframes fundauf { 0% { transform: translate(-50%, -20%) scale(.2); opacity: 0; } 12% { transform: translate(-50%, -62%) scale(1.2); opacity: 1; } 20%, 80% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -80%) scale(.8); opacity: 0; } }
+@keyframes blinken { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+@keyframes abheben { 0% { transform: translateY(0); } 14% { transform: translateY(7px); } 100% { transform: translateY(-950px); } }
+@keyframes flackern { from { transform: scaleY(.8); } to { transform: scaleY(1.15); } }
+@keyframes pulsknopf { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+.fundbild { position: absolute; pointer-events: none; z-index: 4; animation: fundauf 2.8s forwards; filter: drop-shadow(0 6px 0 rgba(35, 50, 74, .25)); }
+.fundbild svg { display: block; width: 100%; height: auto; }
+.sterne circle { animation: blinken 3s ease-in-out infinite; }
+.sterne circle:nth-child(2n) { animation-delay: -1.2s; }
+.sterne circle:nth-child(3n) { animation-delay: -2.1s; animation-duration: 4s; }
+
+/* ---------- v0.7: Elternbereich, Buchstabenwahl ---------- */
+#e-buchstaben { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.e-chip { min-width: 66px; height: 52px; padding: 0 10px; border-radius: 12px; background: #e4dfd5; border: 2px solid transparent; font: 400 22px/1 "Grundschrift", sans-serif; }
+.e-chip.nur-hoeren { border: 2px dashed #9aa3b2; }
+.e-chip.an { background: #2e6ad8; color: #fff; }
+
+/* ---------- v0.7: Aufgabe Silben ---------- */
+.sb-bild { position: absolute; left: 150px; top: 116px; width: 220px; height: 220px; border-radius: 50%; }
+.sb-bild:active { transform: scale(.96); }
+.sb-emoji { display: block; font-size: 120px; line-height: 220px; text-align: center; }
+.sb-wort { position: absolute; left: 30px; top: 366px; width: 460px; text-align: center; font: 400 52px/1.3 "Grundschrift", "Segoe Print", cursive; color: var(--papier); }
+.sb-silbe { display: inline-block; padding: 0 5px 16px; margin: 0 2px; border-bottom: 6px solid rgba(255, 248, 234, .3); border-radius: 0 0 50% 50% / 0 0 28px 28px; opacity: .5; }
+.sb-silbe.an { opacity: 1; border-bottom-color: var(--sonne); }
+.sb-rampe { position: absolute; left: 590px; top: 100px; width: 220px; height: 486px; display: flex; align-items: flex-end; justify-content: center; border-bottom: 12px solid #6f7590; border-radius: 0 0 8px 8px; }
+.sb-rakete { display: flex; flex-direction: column-reverse; align-items: center; }
+.sb-rakete svg { display: block; width: 100%; height: auto; }
+.sb-rakete.start, .rh-rakete.start { animation: abheben 1.7s ease-in forwards; }
+.sb-rakete.wackel { animation: wackel .45s; }
+.sb-duese { width: 170px; }
+.sb-spitze { width: 110px; margin-bottom: -1px; }
+.sb-teil { position: relative; width: 110px; height: 54px; background: var(--papier); border-top: 5px solid #e4dccb; animation: plopp .3s; }
+.sb-teil::after { content: ""; position: absolute; left: 39px; top: 9px; width: 32px; height: 32px; border-radius: 50%; background: #58b9c9; border: 5px solid var(--tinte); }
+.sb-teil.an { background: var(--sonne); }
+.sb-flamme { width: 54px; height: 0; background: linear-gradient(var(--sonne), var(--koralle)); clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: 50% 0; }
+.start .sb-flamme { height: 96px; margin-bottom: -96px; animation: flackern .12s infinite alternate; }
+.sb-klatsch, .sb-start { position: absolute; border-radius: 50%; line-height: 1; }
+.sb-klatsch { left: 186px; top: 580px; width: 156px; height: 156px; background: var(--koralle); box-shadow: 0 8px 0 #b94a38; font-size: 80px; }
+.sb-start { left: 636px; top: 606px; width: 128px; height: 128px; background: var(--blatt); box-shadow: 0 8px 0 #2c7d55; font-size: 62px; }
+.sb-klatsch:active, .sb-start:active, .rh-start:active { transform: translateY(5px); box-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+.sb-klatsch.wackel { animation: wackel .45s; }
+
+/* ---------- v0.7: Aufgabe Plus ---------- */
+.pl-sterne { position: absolute; left: 0; top: 0; }
+.pl-stern { position: absolute; width: 84px; height: 84px; transition: transform .15s; }
+.pl-stern svg { display: block; width: 100%; height: 100%; }
+.pl-stern.gelb { color: var(--sonne); }
+.pl-stern.rot { color: var(--koralle); }
+.pl-stern.kommt { animation: plopp .35s backwards; }
+.pl-stern.geist { opacity: .28; }
+.pl-stern.gezaehlt { transform: scale(1.18); filter: brightness(1.2); }
+.pl-stern.auf { animation: huepf .5s; }
+.pl-rechnung {
+  position: absolute; left: 190px; top: 360px; width: 400px; height: 80px; border-radius: 24px;
+  display: flex; align-items: center; justify-content: center; gap: 20px;
+  font: 400 48px/1 "Grundschrift", "Segoe Print", cursive; color: var(--tinte);
+}
+.pl-rechnung .gelb { color: #cf9200; }
+.pl-rechnung .rot { color: var(--koralle); }
+.pl-luecke { min-width: 56px; text-align: center; border-bottom: 5px dashed var(--tinte); }
+.pl-luecke.gefuellt { border-bottom-color: transparent; color: #1d9a54; }
+
+/* ---------- v0.7: Aufgabe Zahlenreihe ---------- */
+.rh-reihe { position: absolute; left: 0; top: 190px; width: 1024px; display: flex; justify-content: center; gap: 16px; }
+.rh-feld {
+  width: 124px; height: 136px; border-radius: 26px; display: flex; align-items: center; justify-content: center;
+  font: 400 64px/1 "Grundschrift", "Segoe Print", cursive; color: var(--tinte);
+}
+.rh-feld.kommt { animation: reinkommen .4s backwards; }
+.rh-feld.luecke { background: rgba(255, 248, 234, .12); box-shadow: none; border: 6px dashed var(--sonne); color: var(--sonne); }
+.rh-feld.gefuellt { background: #c9efc4; }
+.rh-rakete { position: absolute; left: 836px; top: 372px; width: 180px; }
+.rh-rakete svg { display: block; width: 100%; height: auto; }
+.rh-rakete .sb-flamme { position: absolute; left: 63px; top: 176px; }
+.rh-rakete.start .sb-flamme { margin-bottom: 0; }
+.rh-start {
+  position: absolute; left: 432px; top: 372px; width: 160px; height: 160px; border-radius: 50%; line-height: 1;
+  background: var(--koralle); box-shadow: 0 8px 0 #b94a38; font-size: 84px; animation: pulsknopf 1s ease-in-out infinite;
+}
+
+/* ---------- v0.8: Spiel Roboter steuern ---------- */
+.st-bahn { position: absolute; left: 262px; top: 108px; width: 500px; height: 150px; border-radius: 36px; background: rgba(255, 248, 234, .45); }
+.st-figur { position: absolute; left: 190px; top: 22px; width: 120px; transition: transform .12s; }
+.st-figur.disco { animation: nick .3s infinite; }
+.st-figur.kreisel { animation: drehen .5s linear 3; }
+.st-knueppel {
+  position: absolute; left: 70px; top: 292px; width: 300px; height: 300px; border-radius: 50%; touch-action: none;
+  background: rgba(35, 50, 74, .16); box-shadow: inset 0 0 0 14px rgba(35, 50, 74, .1), inset 0 8px 0 rgba(35, 50, 74, .12);
+}
+.st-knauf {
+  position: absolute; left: 88px; top: 88px; width: 124px; height: 124px; border-radius: 50%; pointer-events: none;
+  background: var(--papier); box-shadow: 0 8px 0 rgba(35, 50, 74, .25), inset 0 0 0 12px #e9dfc8; transition: transform .07s;
+}
+.st-knoepfe { position: absolute; left: 404px; top: 296px; width: 600px; display: flex; flex-wrap: wrap; justify-content: center; gap: 24px 22px; }
+.st-rund, .st-gross { border-radius: 50%; line-height: 1; box-shadow: 0 7px 0 rgba(35, 50, 74, .28); }
+.st-rund { width: 112px; height: 112px; font-size: 56px; margin: 0 8px; }
+.st-gross { width: 128px; height: 128px; font-size: 60px; background: var(--papier); }
+.st-rund:active, .st-gross:active { transform: translateY(5px); box-shadow: 0 2px 0 rgba(35, 50, 74, .28); }
+.st-mikro.laeuft { background: var(--rot); animation: pulsknopf .7s ease-in-out infinite; }
+
+/* ---------- v0.8: Aufgaben mit Bildkarten (Anlaut-Bilder, Lesen) ---------- */
+.ab-vorbild {
+  position: absolute; left: 382px; top: 92px; width: 260px; height: 184px; border-radius: 36px;
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+}
+.ab-emoji { font-size: 96px; line-height: 1; }
+.ab-buchstabe { font: 400 84px/1 "Grundschrift", "Segoe Print", cursive; color: var(--koralle); }
+.ab-karten { position: absolute; left: 0; top: 330px; width: 1024px; display: flex; justify-content: center; gap: 26px; }
+.ab-karte { width: 190px; height: 190px; border-radius: 36px; font-size: 104px; line-height: 178px; border: 6px solid transparent; transition: transform .15s; }
+.ab-karte.kommt { animation: reinkommen .4s backwards; }
+.ab-karte.spricht { transform: scale(1.12); border-color: var(--sonne); }
+.ab-karte.richtig { background: #c9efc4; border-color: #1d9a54; }
+.ab-karte.falsch { opacity: .35; animation: wackel .45s; }
+.ls-wort {
+  position: absolute; left: 192px; top: 96px; width: 640px; height: 200px; border-radius: 36px;
+  display: flex; align-items: center; justify-content: center;
+  font: 400 96px/1.2 "Grundschrift", "Segoe Print", cursive; color: var(--tinte);
+}
+.ls-wort .sb-silbe { opacity: 1; border-bottom-color: rgba(35, 50, 74, .22); padding: 0 3px 12px; margin: 0 1px; }
+.ls-wort .sb-silbe.an { border-bottom-color: var(--koralle); color: var(--koralle); }
+.ls-karten { top: 350px; }
+
+/* ---------- v0.8: Aufgabe Vergleichen ---------- */
+.vg-haufen {
+  position: absolute; top: 118px; width: 360px; height: 330px; padding: 20px 14px; border-radius: 36px;
+  background: rgba(255, 248, 234, .1); border: 5px solid rgba(255, 248, 234, .4);
+}
+.vg-haufen[data-seite="links"] { left: 100px; }
+.vg-haufen[data-seite="rechts"] { left: 564px; }
+.vg-haufen.kommt { animation: einblenden .35s; }
+.vg-haufen.richtig { border-color: #8fdc9a; background: rgba(143, 220, 154, .25); }
+.vg-haufen.falsch { opacity: .4; animation: wackel .45s; }
+.vg-muenzen { display: grid; grid-template-columns: repeat(5, 58px); gap: 8px 6px; justify-content: center; align-content: start; height: 190px; }
+.vg-muenzen i { display: block; width: 58px; height: 58px; }
+.vg-muenzen svg { display: block; width: 100%; height: 100%; }
+.vg-zahl { position: absolute; left: 0; bottom: 12px; width: 100%; text-align: center; font: 400 64px/1 "Grundschrift", "Segoe Print", cursive; color: var(--papier); }
+.vg-zeichen { position: absolute; left: 472px; top: 236px; width: 80px; height: 92px; border-radius: 22px; text-align: center; font: 700 58px/92px -apple-system, "Segoe UI", sans-serif; color: var(--tinte); }
+.vg-zeichen.gefuellt { background: #c9efc4; }
+
+/* ---------- v0.9: Countdown ---------- */
+.cd-zahl { position: absolute; left: 162px; top: 150px; width: 460px; text-align: center; font: 400 260px/1.2 "Grundschrift", "Segoe Print", cursive; color: var(--papier); }
+.cd-zahl.plopp { animation: plopp .35s; }
+.cd-rakete { position: absolute; left: 660px; top: 379px; width: 300px; }   /* steht auf der Startrampe, die Rampe auf dem Boden */
+.cd-rakete svg { display: block; width: 100%; height: auto; }
+.cd-rakete .sb-flamme { position: absolute; left: 123px; top: 292px; }
+.cd-rakete.start { animation: abheben 1.7s ease-in forwards; }
+.cd-rakete.start .sb-flamme { margin-bottom: 0; }
+.cd-start { left: 312px; top: 520px; }
+@keyframes beben { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-5px, 3px); } 50% { transform: translate(4px, -4px); } 75% { transform: translate(-3px, -3px); } }
+.cd-beben { animation: beben .12s linear 10; }
+
+/* ---------- v0.9: Winken zählen ---------- */
+.wk-zahl { position: absolute; left: 110px; top: 120px; width: 250px; height: 270px; border-radius: 40px; text-align: center; font: 400 170px/270px "Grundschrift", "Segoe Print", cursive; color: var(--tinte); }
+.wk-sterne { position: absolute; left: 430px; top: 150px; display: grid; grid-template-columns: repeat(5, 92px); gap: 16px 10px; }
+.wk-stern { display: block; width: 92px; height: 92px; color: rgba(255, 248, 234, .18); transition: color .15s, transform .15s; }
+.wk-stern svg { display: block; width: 100%; height: 100%; }
+.wk-stern.voll { color: var(--sonne); transform: scale(1.08); }
+.wk-stern.auf { animation: huepf .6s; }
+.wk-hand { left: 300px; }
+.sb-klatsch.hoert::after { content: "🎤"; position: absolute; right: -10px; top: -10px; width: 52px; height: 52px; border-radius: 50%; background: var(--papier); font-size: 30px; line-height: 52px; box-shadow: var(--schatten); }
+
+/* ---------- v0.10: Weltkarte ---------- */
+#btn-karte { left: 118px; top: 20px; width: 76px; height: 76px; padding: 13px; }
+#karte { z-index: 8; background: rgba(18, 90, 115, .96); animation: einblenden .25s; }
+.karte-wege { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; }
+.karte-ort {
+  position: absolute; width: 160px; height: 120px; border-radius: 22px; overflow: hidden; border: 6px solid var(--papier);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .25); background: var(--papier);
+}
+.karte-ort svg { display: block; width: 100%; height: 100%; }
+.karte-ort.hier { border-color: var(--sonne); box-shadow: 0 0 0 8px rgba(249, 194, 60, .45), 0 6px 0 rgba(0, 0, 0, .25); }
+.karte-ort.fremd { background: rgba(255, 248, 234, .14); border: 6px dashed rgba(255, 248, 234, .5); box-shadow: none; color: rgba(255, 248, 234, .7); font: 700 70px/100px -apple-system, "Segoe UI", sans-serif; }
+.karte-ort:active { transform: scale(.96); }
+.karte-ort.wackel { animation: wackel .45s; }
+.karte-zu { left: 16px; top: 14px; }
+
+/* ---------- v0.10: Bordcomputer ---------- */
+.bc-pult { position: absolute; left: 190px; top: 96px; width: 800px; height: 580px; border-radius: 44px; background: #5a6390; box-shadow: inset 0 14px 0 #7480b3, 0 10px 0 rgba(0, 0, 0, .25); }
+.bc-schirm { position: absolute; left: 40px; top: 40px; width: 720px; height: 104px; border-radius: 22px; background: #141a3a; display: flex; align-items: center; justify-content: center; gap: 14px; }
+.bc-schirm i { display: block; width: 16px; height: 40px; border-radius: 8px; background: #7df0a8; animation: pegel 1s ease-in-out infinite; }
+.bc-schirm i:nth-child(2n) { animation-delay: -.3s; }
+.bc-schirm i:nth-child(3n) { animation-delay: -.6s; }
+.bc-schirm.ok { background: #1d6b45; }
+@keyframes pegel { 0%, 100% { transform: scaleY(.4); } 50% { transform: scaleY(1.4); } }
+.bc-knoepfe { position: absolute; left: 40px; top: 186px; display: flex; gap: 26px; }
+.bc-knopf { width: 124px; height: 124px; border-radius: 50%; box-shadow: 0 10px 0 rgba(0, 0, 0, .3), inset 0 -10px 0 rgba(0, 0, 0, .14), inset 0 10px 0 rgba(255, 255, 255, .25); }
+.bc-knopf:active { transform: translateY(7px); box-shadow: 0 3px 0 rgba(0, 0, 0, .3), inset 0 -10px 0 rgba(0, 0, 0, .14); }
+.bc-knopf.blitzt { animation: blitzen .35s; }
+@keyframes blitzen { 0% { filter: brightness(1.9); } 100% { filter: brightness(1); } }
+.bc-tasten { position: absolute; left: 40px; top: 376px; display: flex; gap: 26px; }
+.bc-taste { width: 124px; height: 124px; border-radius: 26px; background: var(--papier); box-shadow: 0 9px 0 rgba(0, 0, 0, .28); font: 400 68px/1 "Grundschrift", "Segoe Print", cursive; color: var(--tinte); }
+.bc-taste:active { transform: translateY(6px); box-shadow: 0 3px 0 rgba(0, 0, 0, .28); }
+.bc-hebel { position: absolute; left: 652px; top: 186px; width: 108px; height: 344px; border-radius: 54px; background: #39426b; box-shadow: inset 0 8px 0 rgba(0, 0, 0, .25); }
+.bc-griff { position: absolute; left: 9px; top: 244px; width: 90px; height: 90px; border-radius: 50%; background: var(--koralle); box-shadow: 0 8px 0 #b94a38, inset 0 10px 0 rgba(255, 255, 255, .25); transition: top .18s; }
+.bc-hebel.oben .bc-griff { top: 10px; }
+
+/* ---------- v0.10: Winken, Anzeige „Roboter sieht die Hand“ ---------- */
+.wk-auge { position: absolute; left: 150px; top: 410px; width: 170px; height: 110px; border-radius: 30px; text-align: center; font-size: 70px; line-height: 110px; background: rgba(255, 248, 234, .12); border: 5px solid rgba(255, 248, 234, .3); transition: background .1s, transform .1s; }
+.wk-auge.an { background: var(--sonne); border-color: var(--papier); transform: scale(1.12); }
+
+/* ---------- v0.12: Werkstatt, Bauteile, Sperren ---------- */
+.einstieg .abzeichen.bereit { background: var(--sonne); animation: pulsknopf 1s ease-in-out infinite; }
+.einstieg.tor .schloss { position: absolute; right: -6px; bottom: -4px; width: 44px; height: 44px; }
+/* Fenster des Krebses: siehe „v0.22: Zwei Baupläne beim Krebs“ weiter unten */
+.truhe-teile span { width: 72px; }
+/* Bauteile an der Figur (nur dort, wo sie gebraucht werden) */
+.anbau { position: absolute; pointer-events: none; }
+.anbau svg { display: block; width: 100%; height: auto; }
+.anbau-propeller { right: -20%; top: 34%; width: 40%; animation: drehen .9s linear infinite; }
+.anbau-lampe { left: 31%; top: -38%; width: 38%; }
+
+/* ---------- v0.13: Reisen zu Planeten, Bewohner, Reisealbum ---------- */
+@keyframes flugsterne { to { transform: translateY(768px); } }
+@keyframes flugziel { from { transform: scale(.15); opacity: .4; } to { transform: scale(2.3); opacity: 1; } }
+.flug { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; overflow: hidden; background: #141a3a; }
+.flug svg { display: block; width: 100%; height: auto; }
+.flug-sterne { position: absolute; left: 0; top: -768px; width: 1024px; animation: flugsterne 2.8s linear forwards; }
+.flug-ziel { position: absolute; left: 412px; top: 110px; width: 200px; animation: flugziel 2.8s ease-in forwards; }
+.flug-rakete { position: absolute; left: 402px; top: 430px; width: 220px; animation: rollen .28s linear infinite; }
+.treffen { position: absolute; transform: translate(-50%, -50%); pointer-events: none; filter: drop-shadow(0 5px 0 rgba(35, 50, 74, .2)); }
+.treffen svg { display: block; width: 100%; height: auto; }
+.treffen.froh svg { animation: huepf .7s 2; }
+.ort-planet #welt-rover::after {
+  content: ""; position: absolute; left: -14%; top: -24%; width: 128%; padding-bottom: 128%; border-radius: 50%;
+  border: 5px solid rgba(255, 255, 255, .6); background: rgba(255, 255, 255, .14);
+}
+.truhe-blick { max-height: 590px; overflow-y: auto; touch-action: pan-y; }
+.album { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 4px dashed var(--sand2); }
+.album-ziel { width: 98px; padding: 4px; border-radius: 16px; text-align: center; }
+.album-ziel:active { transform: scale(.94); }
+.album-ziel svg { display: block; width: 100%; height: auto; }
+.album-ziel b { display: block; font: 400 22px/1.2 "Grundschrift", sans-serif; color: var(--tinte); }
+
+/* ---------- v0.14: Hafen, Leuchtturm, Fähre, Seekarte ---------- */
+@keyframes ueberfahrt { from { transform: translateX(-320px); } to { transform: translateX(1060px); } }
+.lichtkegel { animation: blinken 3s ease-in-out infinite; }
+.fahrt { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; overflow: hidden; }
+.fahrt > svg { display: block; width: 1024px; height: 768px; }
+.fahrt-schiff { position: absolute; left: 0; top: 300px; width: 300px; animation: ueberfahrt 3s linear forwards; }
+.fahrt-schiff svg { display: block; width: 100%; height: auto; animation: rollen .9s ease-in-out infinite; }
+/* Fahrt nach links (das Ziel liegt auf der Karte links): Die Fähre ist gespiegelt und kommt von rechts */
+@keyframes ueberfahrtLinks { from { transform: translateX(1060px) scaleX(-1); } to { transform: translateX(-320px) scaleX(-1); } }
+.fahrt.links .fahrt-schiff { animation-name: ueberfahrtLinks; }
+.karte-ort .schloss { position: absolute; right: 4px; bottom: 4px; width: 40px; height: 40px; }
+.karte-ort.fremd svg { display: block; width: 70%; height: auto; margin: 6% auto 0; }
+.karte-ort.matt { opacity: .35; }
+.karte-insel { position: absolute; width: 62px; text-align: center; }
+.karte-insel:active { transform: scale(.92); }
+.karte-insel svg { display: block; width: 100%; height: auto; }
+.karte-insel b { display: block; font: 400 17px/1.1 "Grundschrift", sans-serif; color: var(--papier); }
+/* Schatten unter der Figur: nicht dort, wo sie schwebt (Blase unter Wasser und im All), und nicht im Roboter-Knopf */
+.ort-riff #welt-rover .rs, .ort-wrack #welt-rover .rs, .ort-weltraum #welt-rover .rs, .ort-planet #welt-rover .rs, #btn-robo .rs { display: none; }
+/* ---------- v0.18: Zahlenstrahl am Steg ---------- */
+.zs-aufgabe {
+  position: absolute; left: 312px; top: 96px; width: 400px; height: 150px; border-radius: 40px; display: flex; align-items: center; justify-content: center; gap: 26px;
+  font: 400 96px/1 "Grundschrift", sans-serif; color: var(--tinte);
+}
+.zs-aufgabe b { font-weight: 400; }
+.zs-pfeil { font: 700 68px/1 -apple-system, "Segoe UI", sans-serif; color: var(--koralle); }
+.zs-steg { position: absolute; left: 32px; top: 440px; width: 960px; display: flex; gap: 5px; padding: 10px 8px; border-radius: 16px; background: #7c5233; box-shadow: 0 8px 0 rgba(35, 50, 74, .25); }
+.zs-planke { flex: 1; height: 96px; border-radius: 10px; background: #9a6a44; color: var(--papier); font: 400 44px/96px "Grundschrift", sans-serif; }
+.zs-steg.lang .zs-planke { font-size: 25px; }
+.zs-planke.start { background: var(--sonne); color: var(--tinte); }
+.zs-planke.richtig { background: #1d9a54; animation: huepf .7s; }
+.zs-planke.falsch { animation: wackel .45s; opacity: .4; }
+.zs-planke:active { transform: translateY(3px); }
+.rover-aufgabe.zs-robi { top: 352px; width: 100px; transition: left .4s ease-in-out; }
+.rover-aufgabe.zs-huepf { animation: huepf .5s; }
+/* Verstecke: kleines blinkendes Werkzeug-Zeichen (nur wenn die Figur das Werkzeug hat) */
+@keyframes versteckPuls { 0%, 100% { transform: translate(-50%, -50%) scale(.88); } 50% { transform: translate(-50%, -50%) scale(1.1); } }
+.versteck {
+  position: absolute; width: 50px; height: 50px; padding: 9px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none;
+  background: rgba(255, 248, 234, .85); box-shadow: var(--schatten); animation: versteckPuls 2.2s ease-in-out infinite;
+}
+.versteck svg { display: block; width: 100%; height: 100%; }
+.versteck.nah { background: var(--sonne); }
+/* Luftblasen über der Figur beim Fahren unter Wasser */
+@keyframes blasehoch { to { transform: translate(8px, -130px) scale(1.5); opacity: 0; } }
+.blase { position: absolute; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .75); background: rgba(255, 255, 255, .2); pointer-events: none; z-index: 2; animation: blasehoch 1.6s ease-out forwards; }
+.karte-frage { position: absolute; left: 0; right: 0; top: 34px; text-align: center; font: 800 52px/1 -apple-system, "Segoe UI", sans-serif; color: var(--tinte); }
+.karte-ort.ziel { border-color: var(--sonne); animation: pulsknopf 1.2s ease-in-out infinite; }
+.rh-turm { position: absolute; left: 700px; top: 250px; width: 330px; }
+.rh-turm svg { display: block; width: 100%; height: auto; }
+.rh-turm .lt-strahl { opacity: 0; transition: opacity .4s; }
+.rh-turm .lt-lampe { fill: #9aa5b1; }
+.rh-turm.an .lt-strahl { opacity: .6; animation: blinken 1.6s ease-in-out infinite; }
+.rh-turm.an .lt-lampe { fill: var(--sonne); }
+
+/* ---------- v0.16: Raketenstart mit Rampe und Rauch ---------- */
+@keyframes rauch { 0% { transform: translate(0, 0) scale(.2); opacity: .95; } 100% { transform: translate(var(--dx), var(--dy)) scale(2.6); opacity: 0; } }
+.cd-rampe { position: absolute; left: 652px; top: 310px; width: 330px; }
+.cd-rampe svg { display: block; width: 100%; height: auto; }
+.cd-arm { position: absolute; left: 696px; top: 489px; width: 62px; height: 12px; border-radius: 6px; background: #c8ccd9; transform-origin: 0 50%; transition: transform .9s ease-in; }
+.cd-arm.weg { transform: rotate(-78deg); }
+.cd-rauch { position: absolute; left: 730px; top: 629px; width: 160px; height: 60px; pointer-events: none; }
+.cd-rauch i { position: absolute; left: 50px; top: 0; width: 60px; height: 60px; border-radius: 50%; background: #eef0f6; opacity: 0; }
+.cd-rauch.an i { animation: rauch 1.9s ease-out forwards; }
+.cd-rauch i:nth-child(1) { --dx: -150px; --dy: 10px; }
+.cd-rauch i:nth-child(2) { --dx: 150px; --dy: 10px; animation-delay: .08s; }
+.cd-rauch i:nth-child(3) { --dx: -90px; --dy: 40px; animation-delay: .18s; }
+.cd-rauch i:nth-child(4) { --dx: 90px; --dy: 40px; animation-delay: .26s; }
+.cd-rauch i:nth-child(5) { --dx: -200px; --dy: -20px; animation-delay: .36s; }
+.cd-rauch i:nth-child(6) { --dx: 200px; --dy: -20px; animation-delay: .44s; }
+
+/* ---------- v0.20: Weltkarte mit drei Bändern, Sternenkarte, Hebel zum Schieben ---------- */
+/* Hintergrund: oben Weltall, in der Mitte Himmel und Meer, unten unter Wasser (B.karteGrund in js/bilder.js) */
+.karte-grund { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; }
+.karte-grund svg { display: block; width: 1024px; height: 768px; }
+/* Jede Reiseart hat ihre eigene Linie */
+.karte-wege path { fill: none; stroke-linecap: round; }
+.karte-wege .w-land { stroke: #d3b06e; stroke-width: 14; }                                         /* Landweg */
+.karte-wege .w-wasser { stroke: rgba(255, 248, 234, .5); stroke-width: 9; }                        /* Weg unter Wasser */
+.karte-wege .w-tauchen { stroke: rgba(255, 255, 255, .8); stroke-width: 11; stroke-dasharray: .1 21; }   /* Tauchen: Luftblasen */
+.karte-wege .w-rakete { stroke: var(--sonne); stroke-width: 8; stroke-dasharray: .1 16; }          /* Rakete: gelbe Punkte */
+.karte-wege .w-faehre { stroke: var(--papier); stroke-width: 6; stroke-dasharray: 16 13; }         /* Fähre: gestrichelter Bogen */
+.karte-schiff { position: absolute; width: 64px; pointer-events: none; filter: drop-shadow(0 3px 0 rgba(35, 50, 74, .25)); }
+.karte-schiff svg { display: block; width: 100%; height: auto; }
+.karte-insel { padding: 2px 0; border-radius: 14px; }
+.karte-insel.hier { background: rgba(249, 194, 60, .55); }
+.karte-insel.matt { opacity: .35; }
+/* Sternenkarte: Abflug im Weltraum (das Gegenstück zur Seekarte) */
+#karte.sterne { background: #141a3a; }
+.stern-ziel { position: absolute; width: 104px; margin: -52px 0 0 -52px; text-align: center; }     /* left/top = Mitte des Bildes */
+.stern-ziel svg { display: block; width: 100%; height: auto; }
+.stern-ziel b { display: block; font: 400 24px/1.1 "Grundschrift", sans-serif; color: var(--papier); }
+.stern-ziel:active { transform: scale(.94); }
+.stern-neu { position: absolute; left: 427px; top: 287px; width: 170px; height: 170px; border-radius: 50%; animation: pulsknopf 1.2s ease-in-out infinite; }
+.stern-neu.zu { animation: none; opacity: .75; }
+.stern-neu.wackel { animation: wackel .45s; }
+.stern-neu .schloss { position: absolute; right: 2px; bottom: 2px; width: 58px; height: 58px; }
+/* ---------- v0.21: Zeichenpaar (Fach und Fundstück), Spiele finden auf der Karte, Funk-Krebs ---------- */
+/* Zeichenpaar eines Spiels: links das Fach (ABC = Deutsch, 123 = Mathe, Dreieck = freies Spiel), rechts das Fundstück */
+.zeichen { display: inline-flex; gap: 3px; padding: 4px; border-radius: 28px; background: var(--papier); box-shadow: var(--schatten); }
+.zeichen i { display: block; flex: none; width: 44px; height: 44px; border-radius: 50%; }
+.zeichen .z-fund { padding: 4px; }
+.zeichen svg { display: block; width: 100%; height: 100%; pointer-events: none; }
+.einstieg .zeichen { position: absolute; right: -20px; top: -20px; }
+/* auf der Karte: die Spiele eines Ortes unten in der Kachel; antippen setzt die Figur neben das Spiel */
+.karte-spiele { position: absolute; left: 3px; bottom: 3px; display: flex; gap: 4px; }
+.karte-spiele .zeichen { gap: 2px; padding: 3px; box-shadow: none; background: rgba(255, 248, 234, .94); transform-origin: 50% 100%; transition: transform .15s; }
+.karte-spiele .zeichen i { width: 30px; height: 30px; }
+.karte-spiele .zeichen .z-fund { padding: 2px; }
+.karte-spiele .zeichen.gesucht .z-fund { background: var(--sonne); }
+.karte-ort .karte-spiele svg { display: block; width: 100%; height: 100%; margin: 0; }
+/* Spiele finden: Knöpfe ABC und 123 am linken Rand der Karte */
+.karte-fach { left: 16px; padding: 8px; }
+.karte-fach.an { background: var(--sonne); }
+#karte.zeig-deutsch .karte-ort:not(.hat-deutsch), #karte.zeig-mathe .karte-ort:not(.hat-mathe),
+#karte.zeig-deutsch .karte-insel, #karte.zeig-mathe .karte-insel { opacity: .3; }
+#karte.zeig-deutsch .zeichen:not(.f-deutsch), #karte.zeig-mathe .zeichen:not(.f-mathe) { opacity: .2; }
+#karte.zeig-deutsch .zeichen.f-deutsch, #karte.zeig-mathe .zeichen.f-mathe { transform: scale(1.2); }
+/* Funk-Krebs: Knopf neben der Karte, darunter die kleine Liste „Was fehlt noch?“ */
+#btn-funk { left: 208px; top: 20px; width: 76px; height: 76px; padding: 7px; }
+#btn-funk.an { background: var(--sonne); }
+#funk-liste { position: absolute; left: 190px; top: 110px; z-index: 6; padding: 12px 14px 14px; border-radius: 24px; animation: plopp .3s backwards; }
+#funk-liste::before { content: ""; position: absolute; left: 44px; top: -13px; border: 13px solid transparent; border-top: 0; border-bottom-color: var(--papier); }
+#funk-liste svg { display: block; width: 100%; height: 100%; }
+.fl-teil { width: 84px; height: 84px; margin: 0 auto 4px; }
+.fl-teil.bereit { animation: pulsknopf 1.2s ease-in-out infinite; }
+.fl-zeile { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.fl-zeile i { display: block; flex: none; }
+.fl-fach { width: 36px; height: 36px; }
+.fl-platz { width: 54px; height: 54px; padding: 6px; border-radius: 14px; border: 4px dashed var(--sand2); }
+.fl-platz svg { filter: grayscale(1); opacity: .25; }
+.fl-platz.voll { border: 4px solid var(--blatt); background: #fff; }
+.fl-platz.voll svg { filter: none; opacity: 1; }
+/* Hebel am Bordcomputer: beim Schieben folgt der Griff dem Finger ohne Verzögerung */
+.bc-hebel { touch-action: none; }
+.bc-hebel.zieht .bc-griff { transition: none; }
+
+/* ---------- v0.22: Zwei Baupläne beim Krebs, Werkzeugkasten, Buddelinsel, Werkzeug in den Armen ---------- */
+/* Fenster des Krebses: links unten der Krebs, daneben ein oder zwei Baupläne. Der gewählte Plan ist weiß mit gelbem Rand. */
+.ws { position: absolute; left: 40px; top: 96px; width: 944px; height: 576px; border-radius: 40px; animation: plopp .45s backwards; }
+.ws svg { display: block; width: 100%; height: auto; }
+.ws-zu { left: 16px; top: 14px; }
+.ws-krebs { position: absolute; left: 20px; top: 372px; width: 200px; }
+.ws-plaene { position: absolute; left: 228px; top: 22px; width: 694px; height: 532px; display: flex; justify-content: center; gap: 14px; }
+/* Ein Bauplan ist eine Spalte: oben das Bauteil, ganz unten das Rezept, dazwischen (wenn alles da ist) der Schraubenschlüssel */
+.ws-plan {
+  position: relative; display: flex; flex-direction: column; width: 340px; padding: 12px 12px 8px; border-radius: 30px; border: 6px solid transparent;
+  background: rgba(226, 196, 131, .3); transform: scale(.94); transition: transform .15s;
+}
+.ws-plan.aktiv { background: #fff; border-color: var(--sonne); transform: none; box-shadow: var(--schatten); }
+.ws-plan:not(.aktiv) .ws-rezept { opacity: .75; }
+.ws-plan.bereit:not(.aktiv) .ws-teil { animation: pulsknopf 1.2s ease-in-out infinite; }
+/* Kopf eines Bauplans: groß das Bauteil (die Hauptsache), daneben klein ein Pfeil und der Ort, den es öffnet.
+   Ein Werkzeug ohne Spielplatz steht allein in der Mitte. */
+.ws-kopf { display: flex; flex: none; align-items: center; justify-content: center; gap: 5px; height: 178px; }
+.ws-mitte { display: flex; flex: 1; min-height: 0; align-items: center; justify-content: center; }
+.ws-teil { width: 160px; flex: none; filter: drop-shadow(0 6px 0 rgba(35, 50, 74, .16)); }
+.ws-pfeil { display: block; width: 24px; flex: none; opacity: .4; }
+.ws-ziel { position: relative; display: block; width: 96px; height: 72px; flex: none; border-radius: 14px; overflow: hidden; border: 4px solid var(--papier); box-shadow: 0 4px 0 rgba(35, 50, 74, .2); }
+.ws-ziel svg { height: 100%; }
+.ws-ziel.fremd { background: var(--meer); }
+.ws-ziel.fremd svg { width: 72%; height: auto; margin: 6% auto 0; }
+.ws-ziel.fremd b { position: absolute; left: 0; right: 0; top: 20px; text-align: center; font: 800 30px/1 -apple-system, "Segoe UI", sans-serif; color: var(--tinte); }
+/* Rezept: je Sorte eine Zeile mit der Figur des Spiels (und seinem Fach-Zeichen) und den Plätzen; deutlich abgesetzt vom Bauteil */
+.ws-rezept { flex: none; padding-top: 16px; border-top: 4px dashed var(--sand2); }
+.ws-zeile { display: flex; align-items: center; gap: 12px; height: 76px; margin-bottom: 10px; }
+.ws-zeile:last-child { margin-bottom: 2px; }
+.ws-woher { position: relative; width: 96px; flex: none; }
+.ws-fach { position: absolute; right: -8px; top: -8px; width: 36px; height: 36px; border-radius: 50%; box-shadow: var(--schatten); }
+.ws-plaetze { display: flex; gap: 8px; }
+.ws-plaetze i { width: 66px; height: 66px; padding: 8px; border-radius: 18px; border: 4px dashed var(--sand2); }
+.ws-plaetze i svg { height: 100%; filter: grayscale(1); opacity: .22; }
+.ws-plaetze i.voll { border: 4px solid var(--blatt); background: #fff; }
+.ws-plaetze i.voll svg { filter: none; opacity: 1; }
+.ws-bauen {
+  flex: none; width: 104px; height: 104px; padding: 18px; border-radius: 50%;
+  background: var(--koralle); box-shadow: 0 8px 0 #b94a38; animation: pulsknopf 1s ease-in-out infinite;
+}
+/* Gebaut: das fertige Teil groß, daneben das, was es öffnet */
+.ws.gebaut .ws-teil { position: absolute; left: 270px; top: 126px; width: 300px; filter: drop-shadow(0 10px 0 rgba(35, 50, 74, .25)); animation: plopp .7s; }
+.ws.gebaut.allein .ws-teil { left: 430px; }
+.ws.gebaut .ws-pfeil { position: absolute; left: 590px; top: 242px; width: 56px; }
+.ws.gebaut .ws-ziel { position: absolute; left: 664px; top: 192px; width: 220px; height: 165px; animation: plopp .7s .5s backwards; }
+.ws.gebaut .ws-ziel.fremd b { top: 52px; font-size: 64px; }
+.ws.gebaut .ws-krebs { animation: huepf .7s 2; }
+/* Schatzkiste: Unter den Schlüssel-Teilen liegt der Werkzeugkasten (rot, mit Griff) */
+.truhe-werkzeug { position: relative; display: inline-flex; margin-top: 30px; padding: 10px 16px; border-radius: 14px; background: var(--koralle); box-shadow: inset 0 -12px 0 rgba(0, 0, 0, .12), var(--schatten); }
+.truhe-werkzeug::before { content: ""; position: absolute; left: 50%; top: -18px; width: 64px; height: 18px; margin-left: -32px; border: 6px solid var(--tinte); border-bottom: 0; border-radius: 12px 12px 0 0; box-sizing: border-box; }
+.truhe-werkzeug span { width: 64px; padding: 6px; border-radius: 12px; background: var(--papier); }
+/* Karte: Die Wolke „Neue Insel“ ist klein und liegt im Meer vor der Reihe der besuchten Inseln */
+.karte-ort.klein { width: 84px; height: 70px; border-width: 4px; border-radius: 20px; }
+.karte-ort.klein .karte-frage { top: 15px; font-size: 34px; }
+.karte-ort.klein .schloss { right: -9px; bottom: -9px; width: 30px; height: 30px; }
+/* Zeichen eines Spielplatzes: das Werkzeug, das ihn öffnet (statt ABC oder 123) */
+.zeichen .z-werkzeug { padding: 5px; background: var(--sonne); }
+.karte-spiele .zeichen .z-werkzeug { padding: 3px; }
+
+/* Werkzeug in den Armen: Der Arm sitzt rechts an der Figur, er dreht sich um die Schulter (B.arm in js/bilder.js) */
+@keyframes graben { 0%, 100% { transform: rotate(-22deg); } 45% { transform: rotate(30deg); } }
+@keyframes greifen { 0%, 100% { transform: translateY(8px) rotate(-14deg); } 50% { transform: translateY(-28px) rotate(-14deg); } }
+@keyframes schauen { 0%, 100% { transform: rotate(-16deg); } 50% { transform: rotate(-34deg); } }
+@keyframes lochauf { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
+.arm { position: absolute; left: 62%; top: -4%; width: 104%; pointer-events: none; transform-origin: 10% 58%; transform: rotate(-14deg); }
+.arm svg { display: block; width: 100%; height: auto; overflow: visible; }
+.arm.tut.arm-schaufel { animation: graben .44s ease-in-out 3; }
+.arm.tut.arm-greifarm { animation: greifen .66s ease-in-out 2; }
+.arm.tut.arm-fernrohr { animation: schauen 1.3s ease-in-out 1; }
+/* Versteck mit der Schaufel: das Loch neben der Figur; mit dem Fernrohr: das Gefundene im runden Blick */
+.grabloch { position: absolute; width: 58px; height: 22px; border-radius: 50%; background: rgba(110, 76, 34, .5); pointer-events: none; z-index: 2; transform: translate(-50%, -50%) scale(0); animation: lochauf .5s .4s forwards; }
+.fundbild.blick { padding: 16px; border-radius: 50%; background: rgba(255, 255, 255, .22); box-shadow: 0 0 0 9px var(--tinte), 0 0 0 14px var(--sonne); }
+
+/* Buddelinsel (js/aufgaben/buddeln.js): Raster aus 13 × 8 Feldern, oben das Meer */
+.bu-sand { position: absolute; left: 72px; top: 184px; width: 832px; height: 512px; touch-action: none; }
+/* zwei Schichten mit je 104 Feldern: unten die Löcher, darüber alles, was auf dem Sand steht */
+.bu-loecher, .bu-dinge { position: absolute; left: 0; top: 0; pointer-events: none; }
+.bu-sand i { position: absolute; display: block; width: 64px; height: 64px; pointer-events: none; }
+.bu-sand svg { position: absolute; left: 0; top: -44px; width: 64px; height: 108px; overflow: visible; }
+/* Löcher: eine Stufe tief, zwei Stufen tief; „kante“ = oben ist Sand (dort liegt Schatten); „nass“ = Wasser steht darin */
+.bu-sand .bu-zelle.t1, .bu-sand .bu-zelle.t2 { width: 65px; height: 65px; }   /* ein Pixel breiter: keine feinen Fugen zwischen den Feldern eines Grabens */
+.bu-zelle.t1 { background: #dcb873; }
+.bu-zelle.t2 { background: #c59d58; }
+.bu-zelle.t1.kante { box-shadow: inset 0 8px 0 rgba(0, 0, 0, .13); }
+.bu-zelle.t2.kante { box-shadow: inset 0 14px 0 rgba(0, 0, 0, .17); }
+.bu-zelle.nass { background: #58b9c9; }
+.bu-zelle.nass.t2 { background: var(--meer); }
+/* oberste Reihe: Der Graben reicht bis ins Meer */
+.bu-zelle.zulauf::before { content: ""; position: absolute; left: 0; right: 0; top: -44px; height: 45px; background: inherit; }
+/* Die Figur fährt im Sand; sie steht links über dem Feld, an dem sie arbeitet */
+.rover-aufgabe.bu-robi { left: 0; top: 0; width: 96px; z-index: 3; will-change: transform; }
+.bu-robi.faehrt > svg { animation: rollen .28s linear infinite; }
+.bu-robi .arm.tut { animation: graben .3s ease-in-out 1; }
+/* Geräte am rechten Rand, die Welle oben in der Mitte */
+.bu-leiste { position: absolute; left: 924px; top: 104px; width: 84px; display: flex; flex-direction: column; gap: 5px; }   /* sieben Knöpfe */
+.bu-knopf { width: 84px; height: 84px; padding: 11px; border-radius: 50%; background: var(--papier); box-shadow: var(--schatten); }
+.bu-knopf svg { display: block; width: 100%; height: 100%; pointer-events: none; }
+.bu-knopf.an { background: var(--sonne); transform: scale(1.06); }
+.bu-knopf:active { transform: scale(.94); }
+.bu-welle { left: 473px; top: 14px; padding: 9px; }
+.bu-welle.frage { background: var(--sonne); animation: pulsknopf .7s ease-in-out infinite; }
+@keyframes flut { 0% { transform: translateY(-640px); } 40%, 55% { transform: translateY(0); } 100% { transform: translateY(-700px); } }
+.bu-flut { position: absolute; left: 0; top: 0; width: 1024px; height: 712px; background: rgba(88, 185, 201, .92); border-bottom: 16px solid var(--papier); border-radius: 0 0 40px 40px; pointer-events: none; z-index: 4; animation: flut 1.5s ease-in-out forwards; }
+
+/* ---------- v0.23: Im Leuchtturm (Zahlenreihe als Treppe), Quallengarten (Blitzblick), Schildkrötenwiese ---------- */
+/* Unter Wasser fährt die Figur auch an den neuen Orten in einer Luftblase und ohne Schatten */
+.ort-quallengarten #welt-rover::after, .ort-schildkroetenwiese #welt-rover::after {
+  content: ""; position: absolute; left: -14%; top: -24%; width: 128%; padding-bottom: 128%; border-radius: 50%;
+  border: 5px solid rgba(255, 255, 255, .6); background: rgba(255, 255, 255, .14);
+}
+.ort-quallengarten #welt-rover .rs, .ort-schildkroetenwiese #welt-rover .rs { display: none; }
+/* Zahlenreihe im Leuchtturm: Die Zahlen stehen auf Stufen aus Stein. Die größere Zahl steht höher; bei fallenden
+   Zahlen (Klasse „ab“) führt die Treppe nach unten. Alle Stufen enden auf derselben Grundlinie. */
+.rh-reihe.treppe { top: 176px; }
+.rh-reihe.treppe .rh-feld { position: relative; }
+.rh-reihe.treppe .rh-feld::after { content: ""; position: absolute; left: -8px; right: -8px; top: calc(100% + 6px); background: #a89a80; border-top: 8px solid #c4b59b; border-radius: 4px 4px 0 0; }
+.rh-reihe.treppe .rh-feld.luecke::after { left: -14px; right: -14px; top: calc(100% + 12px); }
+.rh-reihe.treppe .rh-feld.huepf { animation: blitzen .5s; }   /* die Stufe soll nicht mithüpfen */
+.rh-reihe.treppe .rh-feld:nth-child(1), .rh-reihe.treppe.ab .rh-feld:nth-child(5) { top: 152px; }
+.rh-reihe.treppe .rh-feld:nth-child(2), .rh-reihe.treppe.ab .rh-feld:nth-child(4) { top: 114px; }
+.rh-reihe.treppe .rh-feld:nth-child(3) { top: 76px; }
+.rh-reihe.treppe .rh-feld:nth-child(4), .rh-reihe.treppe.ab .rh-feld:nth-child(2) { top: 38px; }
+.rh-reihe.treppe .rh-feld:nth-child(5), .rh-reihe.treppe.ab .rh-feld:nth-child(1) { top: 0; }
+.rh-reihe.treppe .rh-feld:nth-child(1)::after, .rh-reihe.treppe.ab .rh-feld:nth-child(5)::after { height: 30px; }
+.rh-reihe.treppe .rh-feld:nth-child(2)::after, .rh-reihe.treppe.ab .rh-feld:nth-child(4)::after { height: 68px; }
+.rh-reihe.treppe .rh-feld:nth-child(3)::after { height: 106px; }
+.rh-reihe.treppe .rh-feld:nth-child(4)::after, .rh-reihe.treppe.ab .rh-feld:nth-child(2)::after { height: 144px; }
+.rh-reihe.treppe .rh-feld:nth-child(5)::after, .rh-reihe.treppe.ab .rh-feld:nth-child(1)::after { height: 182px; }
+/* die Lampe oben im Turm (statt des Leuchtturms von außen) */
+.rh-turm.innen { left: 600px; top: 16px; width: 300px; }
+/* Blitzblick: Die Quallen sind dunkel (unsichtbar) und leuchten, solange das Becken die Klasse „an“ trägt */
+.bb-becken { position: absolute; left: 122px; top: 100px; width: 780px; height: 440px; }
+.bb-qualle { position: absolute; display: block; width: 96px; height: 106px; opacity: 0; transition: opacity .18s; }
+.bb-qualle svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.bb-becken.an .bb-qualle { opacity: 1; }
+.bb-qualle.auf { animation: huepf .6s; }
+.bb-zeig { left: 930px; top: 282px; }
+/* führt die Treppe nach unten, hängt die Lampe links über der obersten Stufe (gespiegelt) */
+.rh-reihe.treppe.ab ~ .rh-turm.innen { left: 150px; transform: scaleX(-1); }
+
+/* ---------- v0.23.1 ---------- */
+/* Tor mit „leuchtet“ (die kleine Tür im Leuchtturm): großer gelber Schein, der kräftig pulsiert */
+@keyframes pulsHell { 0%, 100% { transform: translate(-50%, -50%) scale(.85); opacity: .8; } 50% { transform: translate(-50%, -50%) scale(1.15); opacity: .35; } }
+.einstieg.tor.leuchtet .einstieg-ring { top: 50%; width: 250%; padding-bottom: 250%; background: var(--sonne); animation: pulsHell 1.3s ease-in-out infinite; }
+/* Karte: kleine Kachel eines Innenraums (Im Leuchtturm), sie sitzt auf der Kachel ihres Hauptortes */
+.karte-ort.innen { width: 112px; height: 84px; border-width: 5px; border-radius: 18px; z-index: 1; }
+.karte-ort.innen .karte-spiele { left: 2px; bottom: 2px; }
+.karte-ort.innen .karte-spiele .zeichen i { width: 26px; height: 26px; }
+.karte-ort.innen .schloss { right: 0; bottom: 0; width: 30px; height: 30px; }
+
+/* ---------- v0.24: Raketenhalle, Spiel „Raketen bauen und starten“ ---------- */
+/* Die Rakete steht links auf der Plattform (Bild 300 × 720; die Triebwerke enden bei y = 548 des Bildes) */
+@keyframes rbZittern { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-3px, 2px); } 75% { transform: translate(3px, -2px); } }
+@keyframes rbAbflug { 0% { transform: translateY(0); } 12% { transform: translateY(6px); } 100% { transform: translateY(-1000px); } }
+.rb-rakete { position: absolute; left: 200px; top: 162px; width: 260px; z-index: 1; }
+.rb-rakete svg { display: block; width: 100%; height: auto; overflow: visible; }
+.rb-rakete .br-flamme { opacity: 0; transform-origin: 150px 548px; }
+.rb-rakete.neu { animation: plopp .35s; }
+.rb-rakete.zuendet { animation: rbZittern .12s linear infinite; }
+.rb-rakete.zuendet .br-flamme { opacity: 1; animation: flackern .12s infinite alternate; }
+.rb-rakete.fliegt { animation: rbAbflug 2.3s ease-in forwards; }
+.rb-rauch { left: 250px; top: 610px; }
+/* Auswahl rechts: Baupläne, drei Reihen Teile, Farben. Das Gewählte hat einen gelben Rand. */
+.rb-wahl { position: absolute; left: 560px; top: 104px; width: 370px; }
+.rb-reihe { display: flex; gap: 10px; margin-bottom: 10px; }
+.rb-plan, .rb-teil { flex: none; border-radius: 18px; background: var(--papier); border: 5px solid transparent; box-shadow: var(--schatten); }
+.rb-plan svg, .rb-teil svg { display: block; width: 100%; height: 100%; pointer-events: none; }
+.rb-plan { width: 84px; height: 128px; padding: 5px; background: #2f6fb0; }
+.rb-teil { width: 84px; height: 84px; padding: 6px; }
+.rb-plan.an, .rb-teil.an { border-color: var(--sonne); }
+.rb-plan:active, .rb-teil:active, .rb-farbe:active { transform: scale(.94); }
+.rb-farben { margin-top: 4px; gap: 12px; }
+.rb-farbe { flex: none; width: 60px; height: 60px; border-radius: 50%; border: 5px solid var(--papier); box-shadow: var(--schatten); }
+.rb-farbe.an { border-color: var(--sonne); transform: scale(1.12); }
+.rb-start {
+  position: absolute; left: 30px; top: 300px; width: 130px; height: 130px; border-radius: 50%; line-height: 1;
+  background: var(--koralle); box-shadow: 0 8px 0 #b94a38; font-size: 68px; animation: pulsknopf 1.4s ease-in-out infinite;
+}
+.rb-start:active { transform: translateY(5px); box-shadow: 0 3px 0 #b94a38; }
+/* solange die Rakete startet, ruht die Auswahl */
+.rb-laeuft .rb-wahl { opacity: .35; pointer-events: none; }
+.rb-laeuft .rb-start { animation: none; opacity: .35; pointer-events: none; }
+
+/* ---------- v0.25: der gemeinsame Raketenstart (js/raketenstart.js) ---------- */
+/* An der Rampe: die Rakete des Kindes (Bild 300 × 720, Triebwerke enden bei y = 548), sie steht auf der Plattform */
+.rs-szene { position: absolute; left: 0; top: 0; width: 1024px; height: 768px; overflow: hidden; }
+.rs-grund svg { display: block; width: 1024px; height: 768px; }
+.rs-rakete { position: absolute; left: 675px; top: 180px; width: 270px; }
+.rs-rakete svg, .rs-stufe svg { display: block; width: 100%; height: auto; overflow: visible; }
+.rs-rakete .br-flamme { opacity: 0; transform-origin: 150px 548px; }
+.rs-rakete.zuendet { animation: rbZittern .12s linear infinite; }
+.rs-rakete.zuendet .br-flamme, .rs-flug .br-flamme { opacity: 1; animation: flackern .12s infinite alternate; }
+.rs-rakete.hebtab { animation: rbAbflug 2s ease-in forwards; }
+/* Im Flug: Sterne ziehen vorbei, am Anfang Wolken. Die Rakete liegt zweimal übereinander (oberer und unterer Teil). */
+@keyframes rsWolke { to { transform: translateY(1100px); } }
+@keyframes rsFall { to { transform: translateY(640px) rotate(14deg); } }
+@keyframes rsWeiter { to { transform: translateY(-120px); } }
+@keyframes rsBoosterL { to { transform: translate(-150px, 520px) rotate(-50deg); } }
+@keyframes rsBoosterR { to { transform: translate(150px, 520px) rotate(50deg); } }
+.rs-flug .flug-sterne { animation-duration: 8s; }
+.rs-wolke { position: absolute; top: -150px; height: 96px; border-radius: 48px; background: rgba(200, 212, 238, .55); animation: rsWolke 1.4s linear forwards; }
+.rs-flieger { position: absolute; left: 407px; top: 190px; width: 210px; height: 504px; animation: rollen .28s linear infinite; }
+.rs-stufe, .rs-ober { position: absolute; left: 0; top: 0; width: 100%; }
+.rs-ober { height: 100%; }
+.rs-oben { clip-path: inset(-200px -150px calc(100% - var(--schnitt)) -150px); }
+.rs-unten { clip-path: inset(var(--schnitt) -200px -500px -200px); }
+.rs-flug .br-flamme { transform-origin: 150px 548px; }
+.rs-flug .br-booster { transform-box: fill-box; transform-origin: 50% 50%; }
+.rs-flug.ohne-booster .br-bl { animation: rsBoosterL 1.6s ease-in forwards; }
+.rs-flug.ohne-booster .br-br { animation: rsBoosterR 1.6s ease-in forwards; }
+.rs-flug.ohne-booster .br-booster .br-flamme { opacity: 0; animation: none; }
+.rs-flug.getrennt .rs-unten { animation: rsFall 1.8s ease-in forwards; }
+.rs-flug.getrennt .rs-unten .br-flamme { opacity: 0; animation: none; }
+.rs-flug.getrennt .rs-ober { animation: rsWeiter 2.4s ease-out forwards; }
+/* Flamme der oberen Stufe: erscheint an der Trennlinie */
+.rs-flamme2 { position: absolute; left: 50%; width: 44px; height: 110px; margin-left: -22px; opacity: 0; background: linear-gradient(var(--sonne), var(--koralle)); clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: 50% 0; }
+.rs-flug.getrennt .rs-flamme2 { opacity: 1; animation: flackern .12s infinite alternate; }
+/* Flug zu den Planeten: auch dort fliegt die eigene Rakete */
+.flug-rakete.eigene { left: 437px; top: 300px; width: 150px; }
+.flug-rakete.eigene svg { overflow: visible; }
+/* die Flamme der oberen Stufe zündet einen Moment nach der Trennung */
+.rs-flamme2 { transition: opacity .25s .35s; }
+
+/* ---------- v0.26: Weltkarte breiter als der Bildschirm, sie rollt seitlich ---------- */
+/* .karte-rolle ist der Rahmen (so groß wie die Bühne), .karte-flaeche die breite Karte darin (Breite aus KARTE.breite
+   in js/app.js). Mit dem Finger wischen macht der Browser selbst, wie im Elternbereich; die Maus zieht (js/app.js).
+   Zurück-Knopf, „ABC“, „123“ und die Pfeile liegen außerhalb des Rahmens und bleiben beim Rollen stehen. */
+.karte-rolle {
+  position: absolute; left: 0; top: 0; width: 1024px; height: 768px; overflow-x: auto; overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; touch-action: pan-x; overscroll-behavior: contain; scrollbar-width: none; cursor: grab;
+}
+.karte-rolle::-webkit-scrollbar { display: none; }
+.karte-rolle.zieht { cursor: grabbing; }
+.karte-flaeche { position: relative; height: 768px; }
+.karte-flaeche .karte-grund, .karte-flaeche .karte-grund svg, .karte-flaeche .karte-wege { width: 100%; }
+/* Pfeile am Rand, im Meer zwischen Land und Unterwasser-Zeile: nur zu sehen, wenn es dort weitergeht. „ruft“ = dort
+   liegt außerhalb des Bildes ein Ziel der Fähre oder ein Spiel des gewählten Fachs. */
+.karte-pfeil { top: 435px; width: 62px; height: 62px; padding: 7px; background: rgba(35, 50, 74, .5); box-shadow: none; }   /* zwischen Landzeile und der Reihe der kleinen Inseln */
+/* dunkel mit hellem Pfeil, damit der linke Pfeil nicht wie der Zurück-Knopf aussieht */
+.karte-pfeil svg path { stroke: var(--papier); }
+.karte-pfeil.ruft svg path { stroke: var(--tinte); }
+.karte-pfeil.links { left: 12px; }
+.karte-pfeil.rechts { right: 12px; }
+.karte-pfeil.ruft { background: var(--sonne); animation: pulsknopf 1.2s ease-in-out infinite; }
+/* Geplante Orte (noch nicht gebaut): blasser als ein unentdeckter Ort */
+.karte-ort.geplant { opacity: .5; }
+.karte-ort.geplant.matt { opacity: .28; }
+/* ---------- v0.27: Malinsel – mit Reifen malen (js/aufgaben/malen.js) ---------- */
+/* Malgrund: weiße Fläche mit der Zeichenfläche darin, oben die Farbpfützen. Die Maße stehen auch im Spiel (X0, Y0, BREIT, HOCH). */
+.ma-grund { position: absolute; left: 72px; top: 100px; width: 832px; height: 600px; border-radius: 28px; background: #fffdf6; box-shadow: 0 0 0 5px rgba(35, 50, 74, .1), 0 8px 0 rgba(35, 50, 74, .12); overflow: hidden; touch-action: none; }
+.ma-bild { position: absolute; left: 0; top: 0; width: 832px; height: 600px; display: block; pointer-events: none; }
+.ma-pfuetze { position: absolute; top: 14px; width: 100px; height: 56px; margin-left: -50px; transition: transform .2s; }   /* ein Knopf: antippen wechselt die Farbe */
+.ma-pfuetze svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ma-pfuetze.an { transform: scale(1.16); }                       /* mit dieser Farbe malen die Reifen gerade */
+@keyframes maPlatsch { 0% { transform: scale(1.16); } 35% { transform: scale(1.5, 1.22); } 100% { transform: scale(1.16); } }
+.ma-pfuetze.platsch { animation: maPlatsch .4s ease-out; }
+/* Die Figur von oben (B.roverOben). Sie dreht sich um die Mitte ihrer Achse; dort setzt das Spiel sie hin. */
+.rover-aufgabe.ma-robi { left: 0; top: 0; width: 72px; height: 79.2px; transform-origin: 36px 47.5px; z-index: 3; will-change: transform; }
+.ma-robi svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.ma-robi .ma-walze { display: none; }
+.ma-robi.r-walze .ma-walze, .ma-robi.r-radierer .ma-walze { display: inline; }
+.ma-robi.r-walze .ma-raeder, .ma-robi.r-radierer .ma-raeder { display: none; }
+.ma-robi.r-radierer .ma-walze rect { fill: #f3a6b5; }                /* die Radierer-Walze ist rosa */
+.ma-robi .ma-reifen { transform-box: fill-box; transform-origin: 50% 50%; }
+.ma-robi.r-schmal .ma-reifen { transform: scaleX(.6); }
+.ma-robi.r-breit .ma-reifen { transform: scaleX(1.25); }
+/* Muster: Die Lauffläche zeigt Punkte oder Striche */
+.ma-robi.m-punkte .ma-rad { stroke-dasharray: .1 12; }
+.ma-robi.m-striche .ma-rad { stroke-dasharray: 9 7; stroke-linecap: butt; }
+/* Gekippt steht die Figur auf ihrem rechten Rad (x = 84 im Bild bleibt stehen): Der Körper wird schmal und rückt
+   an dieses Rad, das linke Rad ist in der Luft. Statt der Walze ist ihr Ende als dickes Rad zu sehen. */
+.ma-robi.gekippt .ma-koerper { transform: translateX(33.6px) scaleX(.6); }
+.ma-robi.gekippt .ma-walze, .ma-robi.gekippt .ma-reifen.links { display: none; }
+.ma-robi.gekippt .ma-raeder { display: inline; }
+.ma-robi.gekippt.r-walze .ma-reifen, .ma-robi.gekippt.r-radierer .ma-reifen { transform: scaleX(1.8); }
+.ma-robi.gekippt.r-radierer .ma-reifen rect { fill: #f3a6b5; }
+/* rechts sieben Knöpfe in drei Gruppen (vier Reifen, zwei Muster, Kippen), oben die Regenwolke */
+.ma-leiste { position: absolute; left: 927px; top: 104px; width: 78px; display: flex; flex-direction: column; gap: 5px; }
+.ma-knopf { width: 78px; height: 78px; padding: 8px; border-radius: 50%; background: var(--papier); box-shadow: var(--schatten); }
+.ma-knopf.abstand { margin-top: 9px; }                               /* erster Knopf einer neuen Gruppe */
+.ma-knopf .rs { display: none; }                                     /* kein Schatten unter der Figur im Kipp-Zeichen */
+.ma-knopf svg { display: block; width: 100%; height: 100%; pointer-events: none; }
+.ma-knopf.an { background: var(--sonne); transform: scale(1.06); }
+.ma-knopf:active { transform: scale(.94); }
+.ma-regen { left: 473px; top: 14px; padding: 9px; }
+.ma-regen.frage { background: var(--sonne); animation: pulsknopf .7s ease-in-out infinite; }
+@keyframes maRegen { 0% { opacity: 0; background-position: 0 0, 0 0; } 15%, 70% { opacity: 1; } 100% { opacity: 0; background-position: -90px 520px, 0 0; } }
+.ma-regenfall {
+  position: absolute; left: 72px; top: 100px; width: 832px; height: 600px; border-radius: 28px; pointer-events: none; z-index: 4;
+  background: repeating-linear-gradient(100deg, rgba(47, 159, 181, 0) 0 16px, rgba(47, 159, 181, .6) 16px 20px, rgba(47, 159, 181, 0) 20px 38px), rgba(88, 185, 201, .28);
+  animation: maRegen 1.5s linear forwards;
+}

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Die Bucht – mBot2-Lernapp</title>
+<link rel="stylesheet" href="stil.css?v=0.27.2">
+</head>
+<body>
+
+<div id="buehne" data-modus="start" data-robo="aus">
+
+  <!-- Welt und Aufgabe -->
+  <div id="welt" class="schicht"></div>
+  <div id="aufgabe" class="schicht"></div>
+
+  <!-- Knöpfe am Rand -->
+  <button id="btn-truhe" class="knopf nur-welt" aria-label="Schatzkiste"><b id="truhe-zahl">0</b></button>
+  <button id="btn-karte" class="knopf nur-welt" aria-label="Weltkarte"></button>
+  <!-- Funk-Krebs: sagt, was er gerade baut und was dafür noch fehlt; darunter klappt die kleine Liste auf -->
+  <button id="btn-funk" class="knopf nur-welt" aria-label="Den Krebs anfunken: Was fehlt noch?"></button>
+  <div id="funk-liste" class="papier nur-welt aus"></div>
+  <button id="btn-zurueck" class="knopf nur-aufgabe" aria-label="Zurück zur Welt"></button>
+  <button id="btn-nochmal" class="knopf nur-aufgabe" aria-label="Noch einmal hören"></button>
+  <div id="punkte" class="nur-aufgabe"></div>
+  <button id="btn-stopp" aria-label="Roboter anhalten">STOPP</button>
+  <button id="btn-robo" class="knopf" aria-label="Roboter verbinden"><i id="robo-licht"></i></button>
+
+  <!-- Griff zum Elternbereich: Zahnrad eine Sekunde gedrückt halten -->
+  <div id="eltern-griff" aria-label="Elternbereich: gedrückt halten">
+    <span id="eltern-hinweis">Für Eltern: Zahnrad gedrückt halten</span>
+    <span id="version"></span>
+    <span id="eltern-zahnrad"></span>
+  </div>
+
+  <!-- Feier und Schatzkiste -->
+  <div id="feier" class="schicht aus"></div>
+
+  <!-- Weltkarte -->
+  <div id="karte" class="schicht aus"></div>
+
+  <!-- Startbild -->
+  <div id="start" class="schicht">
+    <h1>Die Bucht</h1>
+    <div id="start-rover" class="rover"></div>
+    <!-- Erst der Start-Knopf (danach darf die Stimme sprechen), dann: Wer spielt? Ein Bild pro Spieler,
+         „+“ legt einen neuen an (js/app.js, zeigeStart) -->
+    <button id="btn-los" aria-label="Los geht's"></button>
+    <div id="start-spieler"></div>
+  </div>
+
+  <!-- Elternbereich -->
+  <div id="eltern" class="schicht aus">
+    <div class="e-inhalt">
+      <div class="e-kopf">
+        <h2>Elternbereich</h2>
+        <span class="e-version"></span>
+        <button id="e-zu" class="e-knopf e-haupt">Schließen</button>
+      </div>
+
+      <section>
+        <h3>Spieler und Spieldauer</h3>
+        <p class="e-hinweis">Jeder Spieler hat ein Bild und seinen eigenen Spielstand. Neue Spieler entstehen auf dem Startbild über das „+“. Die Einstellungen weiter unten gelten für alle.</p>
+        <div id="e-spieler"></div>
+        <div class="e-reihe"><button id="e-wechseln" class="e-knopf">Spieler wechseln (zum Startbild)</button></div>
+        <div class="e-reihe"><span class="e-name">Aufgaben pro Spiel</span><select id="e-runden"><option value="2">2 Aufgaben</option><option value="3">3 Aufgaben</option><option value="4">4 Aufgaben</option><option value="5">5 Aufgaben</option></select></div>
+        <p class="e-hinweis">Jede gelöste Aufgabe bringt sofort ein Fundstück. Es bleibt auch, wenn das Kind ein Spiel vorzeitig verlässt.</p>
+        <div class="e-reihe"><span class="e-name">Preis eines Bauteils</span><select id="e-preis"><option value="1">1 + 1 Fundstücke (zwei Aufgaben)</option><option value="2">2 + 2 Fundstücke (vier Aufgaben)</option><option value="3">3 + 3 Fundstücke (sechs Aufgaben)</option></select></div>
+        <label class="e-haken"><input type="checkbox" id="e-offen"> Alle Orte offen (keine Sperren, die Karte ist ganz aufgedeckt, alle Verstecke sind zu sehen; zum Üben und Testen)</label>
+        <p class="e-hinweis">Der Krebs am Strand baut aus den Fundstücken Bauteile: Propeller (Riff und Wrack), Kompass (Pirateninsel), Lampe (Raketenstation), Triebwerk (Rakete und Weltraum).</p>
+      </section>
+
+      <section>
+        <h3>Buchstaben</h3>
+        <p class="e-hinweis">Antippen schaltet einen Buchstaben ein oder aus. Blau = wird geübt. Gestrichelt = nur beim Laute-Hören (kein Nachspuren).</p>
+        <div id="e-buchstaben"></div>
+        <p id="e-buchstaben-hinweis" class="e-hinweis"></p>
+        <div class="e-reihe"><button id="e-buchstaben-vorgabe" class="e-knopf">Zurück auf M A L O U S R E</button></div>
+      </section>
+
+      <section>
+        <h3>Roboter</h3>
+        <p id="e-kein-bt" class="e-warn aus">Dieser Browser kann kein Bluetooth. Auf dem iPad bitte <b>Bluefy</b> verwenden, am Computer <b>Chrome</b> oder <b>Edge</b>. Die App läuft auch ohne Roboter.</p>
+        <p>Status: <b id="e-status">Nicht verbunden</b></p>
+        <div class="e-reihe">
+          <button id="e-verbinden" class="e-knopf e-haupt">Verbinden</button>
+          <button id="e-alle" class="e-knopf">Alle Geräte zeigen</button>
+          <button id="e-trennen" class="e-knopf" disabled>Trennen</button>
+          <button id="e-probe-robo" class="e-knopf">Reaktion testen</button>
+        </div>
+        <label class="e-haken"><input type="checkbox" id="e-bewegung"> Bewegung erlauben (Roboter steht auf dem Boden)</label>
+        <label class="e-haken"><input type="checkbox" id="e-mitfahren"> Roboter fährt in der Welt langsam mit, wenn die Figur fährt</label>
+        <div class="e-reihe"><span class="e-name">Steuerung</span><select id="e-steuerung"><option value="fein">stufenlos (wie ein Steuerknüppel)</option><option value="einfach">einfach (nur vor, zurück, drehen)</option></select></div>
+        <div class="e-reihe"><span class="e-name">Fahrtempo</span><input type="range" id="e-tempo" min="20" max="60" step="5"><span id="e-tempo-wert" class="e-wert"></span></div>
+        <div class="e-reihe"><span class="e-name">Lautstärke Roboter</span><input type="range" id="e-laut" min="0" max="100" step="10"><span id="e-laut-wert" class="e-wert"></span></div>
+        <p class="e-hinweis">Reaktionen bewegen den Roboter höchstens 0,4 Sekunden am Stück. Beim Steuern und Mitfahren fährt er, solange der Finger auf dem Bildschirm liegt. Der rote STOPP-Knopf oben rechts hält ihn sofort an. Falls er beim Vorwärtsfahren dreht: Steuerung auf „einfach“ stellen.</p>
+      </section>
+
+      <section>
+        <h3>Stimme und Klänge</h3>
+        <div class="e-reihe"><select id="e-stimme"></select><button id="e-probe" class="e-knopf">Stimme hören</button><button id="e-probe-klang" class="e-knopf">Zwitschern hören</button></div>
+        <div class="e-reihe"><span class="e-name">Sprechtempo</span><input type="range" id="e-sprechtempo" min="0.6" max="1.1" step="0.05"><span id="e-sprechtempo-wert" class="e-wert"></span></div>
+        <p class="e-hinweis">Eigene Laut-Aufnahmen: Dateien wie <code>m.m4a</code> in den Ordner <code>audio/laute/</code> legen (siehe LIESMICH dort). Solange eine Aufnahme fehlt, fragt die App „Womit fängt Maus an?“.</p>
+      </section>
+
+      <section>
+        <h3>Klatschen erkennen (Silben-Spiel)</h3>
+        <p class="e-hinweis">Das Tippen auf den Klatsch-Knopf geht immer. Zusätzlich kann ein Mikrofon echtes Klatschen mitzählen. Bitte hier ausprobieren, ob es auf diesem Gerät funktioniert.</p>
+        <div class="e-reihe"><span class="e-name">Mikrofon</span><select id="e-klatschen"><option value="auto">automatisch: Roboter, wenn verbunden, sonst iPad</option><option value="aus">aus (nur tippen)</option><option value="ipad">Mikrofon des iPads</option><option value="roboter">Mikrofon des Roboters</option></select><button id="e-klatsch-test" class="e-knopf">10 Sekunden testen</button></div>
+        <div class="e-reihe"><span class="e-name">Schwelle</span><input type="range" id="e-klatsch-schwelle" min="0.1" max="0.8" step="0.05"><span id="e-klatsch-schwelle-wert" class="e-wert"></span></div>
+        <p id="e-klatsch-anzeige" class="e-hinweis" style="font-family:ui-monospace,Menlo,Consolas,monospace"></p>
+        <p class="e-hinweis">Kleinere Schwelle = empfindlicher. Zählt es zu oft (Sprechen, Geräusche), die Schwelle erhöhen.</p>
+      </section>
+
+      <section>
+        <h3>Lernstand</h3>
+        <div id="e-stufen"></div>
+        <pre id="e-stand"></pre>
+        <div class="e-reihe"><button id="e-reset" class="e-knopf e-rot">Neu beginnen</button></div>
+      </section>
+
+      <section>
+        <h3>Protokoll</h3>
+        <p class="e-hinweis">Bei Problemen: „Protokoll kopieren“ und den Text weitergeben. <a href="test/index.html">Zur Testkonsole</a></p>
+        <pre id="e-log"></pre>
+        <div class="e-reihe"><button id="e-kopieren" class="e-knopf">Protokoll kopieren</button></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- unsichtbar: zerlegt Strichdaten in Punkte -->
+<svg id="mess" width="0" height="0" aria-hidden="true"><path id="messpfad" d=""/></svg>
+
+<script src="mbot.js?v=0.27.2"></script>
+<script src="js/kern.js?v=0.27.2"></script>
+<script src="js/bilder.js?v=0.27.2"></script>
+<script src="inhalt/buchstaben.js?v=0.27.2"></script>
+<script src="inhalt/mengen.js?v=0.27.2"></script>
+<script src="inhalt/silben.js?v=0.27.2"></script>
+<script src="inhalt/rechnen.js?v=0.27.2"></script>
+<script src="inhalt/woerter.js?v=0.27.2"></script>
+<script src="inhalt/welt.js?v=0.27.2"></script>
+<script src="inhalt/bauteile.js?v=0.27.2"></script>
+<script src="js/welt.js?v=0.27.2"></script>
+<script src="js/planeten.js?v=0.27.2"></script>
+<script src="js/raketenstart.js?v=0.27.2"></script>
+<script src="js/aufgaben/laut-finden.js?v=0.27.2"></script>
+<script src="js/aufgaben/nachspuren.js?v=0.27.2"></script>
+<script src="js/aufgaben/mengen.js?v=0.27.2"></script>
+<script src="js/aufgaben/silben.js?v=0.27.2"></script>
+<script src="js/aufgaben/plus.js?v=0.27.2"></script>
+<script src="js/aufgaben/reihe.js?v=0.27.2"></script>
+<script src="js/aufgaben/steuern.js?v=0.27.2"></script>
+<script src="js/aufgaben/anlaut-bilder.js?v=0.27.2"></script>
+<script src="js/aufgaben/lesen.js?v=0.27.2"></script>
+<script src="js/aufgaben/vergleichen.js?v=0.27.2"></script>
+<script src="js/aufgaben/countdown.js?v=0.27.2"></script>
+<script src="js/aufgaben/winken.js?v=0.27.2"></script>
+<script src="js/aufgaben/bordcomputer.js?v=0.27.2"></script>
+<script src="js/aufgaben/zahlenstrahl.js?v=0.27.2"></script>
+<script src="js/aufgaben/buddeln.js?v=0.27.2"></script>
+<script src="js/aufgaben/blitzblick.js?v=0.27.2"></script>
+<script src="js/aufgaben/raketenbau.js?v=0.27.2"></script>
+<script src="js/aufgaben/malen.js?v=0.27.2"></script>
+<script src="js/app.js?v=0.27.2"></script>
+</body>
+</html>

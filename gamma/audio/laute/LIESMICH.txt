@@ -1,0 +1,25 @@
+Eigene Laut-Aufnahmen
+=====================
+
+Hier kommen kurze Aufnahmen der einzelnen Laute hin, eine Datei pro Buchstabe.
+Wichtig: den LAUT sprechen, nicht den Buchstabennamen (also "mmm", nicht "Em").
+
+Dateinamen (klein geschrieben):
+
+    m.m4a   a.m4a   l.m4a   o.m4a   u.m4a   s.m4a   r.m4a   e.m4a
+
+Erlaubt sind die Endungen .m4a, .mp3 und .wav.
+
+So geht es am einfachsten:
+  1. Auf dem iPhone oder iPad die App "Sprachmemos" öffnen.
+  2. Pro Laut eine kurze Aufnahme machen (etwa 1 Sekunde, ruhig und deutlich).
+  3. Aufnahme teilen/sichern, in "m.m4a" usw. umbenennen und in diesen Ordner legen.
+  4. Zusammen mit der App zu GitHub hochladen.
+
+Was die App daraus macht:
+  - Gibt es zu einem Buchstaben eine Aufnahme, spielt die Aufgabe "Laute hören" diesen Laut ab.
+  - Fehlt die Aufnahme, fragt die App stattdessen "Womit fängt Maus an?" und zeigt ein Bild dazu.
+  Man kann also Buchstabe für Buchstabe nachrüsten.
+
+Hinweis: Als lokale Datei auf dem PC (Doppelklick) kann der Browser die Aufnahmen nicht laden.
+Über GitHub Pages funktioniert es. Im Protokoll (Elternbereich) steht "Aufnahme gefunden: m.m4a".
