@@ -7,7 +7,7 @@
 "use strict";
 
 const MBot = (() => {
-  const VERSION = "0.27.2";
+  const VERSION = "0.29.1";
 
   /* ---------- Konstanten: Makeblock Live-Mode-Protokoll (f3/f4) ---------- */
   const uuid16 = (x) => `0000${x}-0000-1000-8000-00805f9b34fb`;

@@ -45,6 +45,45 @@
   const astTiefe = (farbe, dick, stamm, aeste) => `${strichTiefe(aeste, dick)}
       <path d="${stamm}" stroke="${farbe}" stroke-width="${dick}" stroke-linecap="round" fill="none"/>${strichTiefe(stamm, dick)}`;
 
+  /* ---------- Deko, die man nirgends sammeln kann (seit v0.28.2) ----------
+   * REGEL: Was es in einem Spiel als Fundstück gibt (Muschel, Seestern, Münze, Perle, Stern, Anker, Boje …), liegt
+   * nicht als bloße Deko in einem Ortsbild herum; das Kind hält es sonst für etwas zum Einsammeln. Ausnahme sind
+   * große Dinge, die sichtbar zum Ort oder zu einem Spiel gehören (der große Anker am Wrack). Stattdessen: */
+  const kiesel = (x, y, r = 9, farbe = F.stein) => `<ellipse cx="${x}" cy="${z1(y + r * 0.55)}" rx="${z1(r * 1.1)}" ry="${z1(r * 0.3)}" fill="${F.tinte}" opacity=".12"/>
+    <ellipse cx="${x}" cy="${y}" rx="${r}" ry="${z1(r * 0.68)}" fill="${farbe}"/>
+    <path d="M${z1(x - r)} ${y} A${r} ${z1(r * 0.68)} 0 0 0 ${z1(x + r)} ${y} A${r} ${z1(r * 0.3)} 0 0 1 ${z1(x - r)} ${y}Z" fill="#000" opacity=".13"/>
+    <ellipse cx="${z1(x - r * 0.3)}" cy="${z1(y - r * 0.3)}" rx="${z1(r * 0.35)}" ry="${z1(r * 0.14)}" fill="#fff" opacity=".35"/>`;
+  const kieselHaufen = (x, y, s = 1) => `${kiesel(x, y, 10 * s)}${kiesel(z1(x + 19 * s), z1(y + 5 * s), 7 * s, "#a39378")}${kiesel(z1(x - 15 * s), z1(y + 7 * s), 6 * s, "#cdbfa6")}`;
+  // Treibholz: ein Ast mit einem Stummel
+  const treibholz = (x, y, s = 1, dreh = -8) => `<g transform="translate(${x} ${y}) rotate(${dreh}) scale(${s})">
+    <ellipse cx="0" cy="12" rx="56" ry="5" fill="${F.tinte}" opacity=".12"/>
+    <path d="M-52 0 H52" stroke="#b08a63" stroke-width="15" stroke-linecap="round"/><path d="M8 -2 L30 -22" stroke="#b08a63" stroke-width="9" stroke-linecap="round"/>
+    <path d="M-52 5 H52" stroke="#000" stroke-width="5" stroke-linecap="round" opacity=".13"/><path d="M-46 -4 H30" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".28"/>
+    <circle cx="-52" cy="0" r="5" fill="#8f6d4b"/></g>`;
+  // Strandgras: ein Büschel aus fünf Halmen
+  const strandgras = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})" stroke-linecap="round" fill="none">
+    <ellipse cx="0" cy="2" rx="22" ry="4" fill="${F.tinte}" opacity=".12"/>
+    <path d="M-10 0 Q-20 -22 -26 -30 M-4 0 Q-8 -30 -6 -44 M2 0 Q8 -28 16 -40 M8 0 Q20 -18 30 -24" stroke="${F.blatt}" stroke-width="6"/>
+    <path d="M-1 0 Q0 -24 4 -34" stroke="${F.blatt2}" stroke-width="6"/></g>`;
+  // Schaum am Saum einer Welle: eine helle Linie entlang des Pfades d, dazu ein paar Bläschen [x, y, r]
+  const schaum = (d, blasen = []) => `<path d="${d}" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".7"/>
+    <g fill="#fff" opacity=".75">${blasen.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join("")}</g>`;
+  // Korallenstück für den Meeresboden
+  const korallenstueck = (x, y, farbe = F.koralle, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0 V-22 M0 -12 L-12 -24 M0 -14 L12 -28" stroke="${farbe}" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M3 0 V-20" stroke="#000" stroke-width="3" stroke-linecap="round" opacity=".13"/></g>`;
+  // Kleiner Hafen an einer Anlegestelle (seit v0.28.2): eine runde Bucht mit Kaimauer, in der die Fähre liegt, und ein
+  // Holzsteg mit zwei Pollern, der von ihr an Land führt (unter dem Steg kommt die Figur an). x, y = Mitte der Fähre
+  // (wie am Tor in inhalt/welt.js); wasser = Farben des Meeres an diesem Ort. Keine Bojen und Anker: beides Fundstücke.
+  const anleger = (x, y, wasser = F.meer, wasser2 = F.meer2) => `
+    <path d="M${x - 152} ${y - 16} V${y + 26} Q${x - 152} ${y + 78} ${x - 96} ${y + 78} H${x + 96} Q${x + 152} ${y + 78} ${x + 152} ${y + 26} V${y - 16}Z" fill="${F.stein}"/>
+    <path d="M${x - 152} ${y + 30} Q${x - 152} ${y + 78} ${x - 96} ${y + 78} H${x + 96} Q${x + 152} ${y + 78} ${x + 152} ${y + 30} Q${x + 148} ${y + 70} ${x + 96} ${y + 70} H${x - 96} Q${x - 148} ${y + 70} ${x - 152} ${y + 30}Z" fill="#000" opacity=".12"/>
+    <path d="M${x - 140} ${y - 44} V${y + 24} Q${x - 140} ${y + 66} ${x - 94} ${y + 66} H${x + 94} Q${x + 140} ${y + 66} ${x + 140} ${y + 24} V${y - 44}Z" fill="${wasser}"/>
+    <path d="M${x - 140} ${y + 12} q20 -9 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 V${y + 24} Q${x + 140} ${y + 66} ${x + 94} ${y + 66} H${x - 94} Q${x - 140} ${y + 66} ${x - 140} ${y + 24}Z" fill="${wasser2}" opacity=".55"/>
+    <rect x="${x - 26}" y="${y + 46}" width="52" height="64" rx="4" fill="${F.holz}"/>
+    <path d="M${x - 26} ${y + 62} h52 M${x - 26} ${y + 78} h52 M${x - 26} ${y + 94} h52" stroke="${F.holz2}" stroke-width="4"/>
+    <rect x="${x + 16}" y="${y + 46}" width="10" height="64" fill="#000" opacity=".1"/>
+    ${[-1, 1].map((k) => `<rect x="${x + k * 34 - 7}" y="${y + 50}" width="14" height="26" rx="5" fill="${F.holz2}"/><rect x="${x + k * 34 - 9}" y="${y + 46}" width="18" height="9" rx="4" fill="${F.papier}"/>`).join("")}`;
+
   /* ---------- Figuren (Innenteile, damit sie sich in Szenen einsetzen lassen) ---------- */
   const teil = {
     // Mit etwas Tiefe (seit v0.18.3): Schatten am Boden (Klasse „rs“, unter Wasser und im All ausgeblendet),
@@ -260,16 +299,17 @@
       <g fill="#fff" opacity=".3"><rect x="514" y="333" width="5" height="56"/><rect x="582" y="333" width="5" height="56"/><rect x="548" y="321" width="5" height="68"/></g>
       <g fill="${F.holz2}" opacity=".75"><rect x="522" y="344" width="6" height="11" rx="3"/><rect x="590" y="344" width="6" height="11" rx="3"/><rect x="556" y="334" width="6" height="11" rx="3"/></g>
       <path d="M552 392 v-22 q8 -8 16 0 v22z" fill="${F.holz2}"/><path d="M560 318 V288" stroke="${F.holz2}" stroke-width="4"/><path d="M560 288 L584 296 L560 304Z" fill="${F.koralle}"/></g>
-    <!-- Kleinkram im Sand -->
-    <g transform="translate(900 610) scale(.5)">${teil.seestern()}</g>
-    <g transform="translate(620 650) scale(.34)">${teil.muschel()}</g><g transform="translate(60 600) scale(.3) rotate(-20)">${teil.muschel()}</g>
+    <!-- Kleinkram im Sand: nichts, was man sammeln kann (siehe Regel bei „kiesel“) -->
+    ${treibholz(926, 642, 0.9, -10)}${kieselHaufen(648, 676)}${strandgras(76, 642, 1.1)}${strandgras(986, 420, 0.8)}
+    ${schaum("M0 321 Q180 289 400 309 T800 301 T1024 313", [[150, 312, 4], [520, 318, 3.5], [880, 316, 4]])}
     <ellipse cx="240" cy="456" rx="25" ry="4.5" fill="${F.tinte}" opacity=".15"/>
     <circle cx="238" cy="430" r="26" fill="${F.papier}"/><path d="M238 404 A26 26 0 0 1 264 430 L238 430Z" fill="${F.koralle}"/><path d="M238 456 A26 26 0 0 1 212 430 L238 430Z" fill="${F.meer}"/>
     ${sichel(238, 430, 26, 0.13, 0, 0.38, 0.65)}${glanz(238, 430, 20, 292, 338, 3, 0.4)}
     <g fill="${F.sand2}"><ellipse cx="660" cy="470" rx="9" ry="6"/><ellipse cx="690" cy="488" rx="9" ry="6"/><ellipse cx="664" cy="508" rx="9" ry="6"/><ellipse cx="694" cy="526" rx="9" ry="6"/>
       <circle cx="420" cy="430" r="5"/><circle cx="820" cy="560" r="5"/><circle cx="330" cy="660" r="4"/><circle cx="500" cy="600" r="5"/><circle cx="960" cy="470" r="4"/><circle cx="130" cy="520" r="5"/></g>
     <path d="M0 704 Q130 676 260 698 T520 690 T780 702 T1024 686 V768 H0Z" fill="${F.meer2}"/>
-    <path d="M0 732 Q140 714 280 730 T560 724 T840 734 T1024 720 V768 H0Z" fill="${F.meer}"/>`);
+    <path d="M0 732 Q140 714 280 730 T560 724 T840 734 T1024 720 V768 H0Z" fill="${F.meer}"/>
+    ${schaum("M0 702 Q130 674 260 696 T520 688 T780 700 T1024 684", [[90, 682, 4], [118, 674, 3], [400, 684, 4], [640, 690, 3.5], [668, 684, 3], [930, 684, 4]])}`);
 
   B.riff = () => svg("0 0 1024 768", `
     <rect width="1024" height="768" fill="${F.riff}"/>
@@ -534,6 +574,7 @@
     <path d="${welle(280, 12)} V326 H0Z" fill="${F.meer2}" opacity=".85"/>
     <path d="M0 316 Q170 284 390 304 T770 316 T1024 334 V768 H0Z" fill="${F.sand2}"/>
     <path d="M0 344 Q200 314 420 332 T800 344 T1024 360 V768 H0Z" fill="${F.sand}"/>
+    ${anleger(330, 306, P.see)}
     <path d="M690 318 L760 280 L772 290 L706 330Z" fill="#000" opacity=".14" transform="translate(4 6)"/>
     <path d="M690 318 L760 280 L772 290 L706 330Z" fill="${F.holz}"/><path d="M697 318 L760 284" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".3"/>
     <g transform="translate(0 -150)">
@@ -550,7 +591,7 @@
     <g transform="translate(866 394) scale(.74)">${teil.truhe()}</g>
     <path d="M736 656 l44 44 m0 -44 l-44 44" stroke="${F.koralle}" stroke-width="12" stroke-linecap="round"/>
     <path d="M560 470 q30 -24 60 0 t60 0 t60 30" stroke="${F.sand2}" stroke-width="5" fill="none" stroke-dasharray="4 14" stroke-linecap="round"/>
-    <g transform="translate(300 690) scale(.3)">${teil.muschel()}</g><g transform="translate(960 600) scale(.4)">${teil.seestern()}</g>
+    ${kieselHaufen(316, 708)}${strandgras(976, 636, 1)}
     <g fill="${F.sand2}"><circle cx="420" cy="430" r="5"/><circle cx="560" cy="700" r="5"/><circle cx="900" cy="560" r="4"/><circle cx="250" cy="480" r="5"/><circle cx="660" cy="410" r="4"/></g>
     <path d="M0 734 Q140 714 280 732 T560 726 T840 736 T1024 720 V768 H0Z" fill="${P.see}"/>`);
 
@@ -685,7 +726,7 @@
   const kleinerFisch = (x, y, s, farbe, gespiegelt) => `<g style="color:${farbe}" transform="translate(${x} ${y}) scale(${gespiegelt ? -s : s} ${s})" opacity=".9">${teil.fisch()}</g>`;
   const DETAIL = {
     riff: `${kleinerFisch(700, 180, 0.45, "#f9c23c")}${kleinerFisch(760, 210, 0.38, "#f9c23c")}${kleinerFisch(120, 240, 0.5, "#f48fb1", true)}${kleinerFisch(880, 380, 0.42, "#b9e36b")}
-      <g transform="translate(330 690) scale(.42)">${teil.seestern()}</g><g transform="translate(700 700) scale(.3)">${teil.muschel()}</g><g transform="translate(440 706) scale(.26) rotate(20)">${teil.muschel()}</g>
+      ${kieselHaufen(350, 712)}${kiesel(716, 716, 9, "#a39378")}${kiesel(742, 722, 6)}
       <ellipse cx="421" cy="696" rx="17" ry="3.5" fill="${F.tinte}" opacity=".14"/><ellipse cx="665" cy="700" rx="17" ry="3.5" fill="${F.tinte}" opacity=".14"/>
       <g stroke="${F.koralle}" stroke-width="12" stroke-linecap="round" fill="none"><path d="M420 690 V650 M420 672 L402 648 M420 676 L440 652"/></g>
       ${astTiefe(F.koralle, 12, "M420 690 V650", "M420 672 L402 648 M420 676 L440 652")}
@@ -694,12 +735,10 @@
       <g fill="#fff" opacity=".45"><circle cx="500" cy="200" r="6"/><circle cx="512" cy="170" r="4"/><circle cx="880" cy="250" r="5"/><circle cx="210" cy="150" r="5"/></g>`,
     wrack: `${kleinerFisch(260, 200, 0.45, "#f9c23c")}${kleinerFisch(320, 180, 0.36, "#f9c23c")}${kleinerFisch(940, 250, 0.5, "#f0715b", true)}
       <g fill="none" stroke="#9aa7ad" stroke-width="7"><circle cx="196" cy="660" r="11"/><circle cx="214" cy="674" r="11"/><circle cx="234" cy="684" r="11"/></g>
-      <g transform="translate(520 660) scale(.3)">${teil.muenze()}</g><g transform="translate(552 676) scale(.26)">${teil.muenze()}</g><g transform="translate(950 690) scale(.26)">${teil.muenze()}</g>
-      <g transform="translate(420 690) scale(.36)">${teil.seestern()}</g>
+      ${kieselHaufen(536, 682)}${kiesel(960, 704, 8, "#a39378")}${kiesel(436, 706, 9)}
       <path d="M388 470 l30 -8 M410 540 l34 -6 M760 380 l40 -8 M700 560 l36 -6" stroke="${F.holz2}" stroke-width="6" stroke-linecap="round"/>`,
     weltraum: `<circle cx="470" cy="470" r="26" fill="${F.koralle}"/><path d="M448 462 Q470 452 492 462 Q470 468 448 462Z" fill="#c9503e"/>${sichel(470, 470, 26, 0.14, -35)}
-      <circle cx="930" cy="120" r="18" fill="#7fc8a9"/>${sichel(930, 120, 18, 0.13, -35)}<ellipse cx="930" cy="122" rx="30" ry="7" fill="none" stroke="#f59a3c" stroke-width="4" transform="rotate(-18 930 122)"/>
-      <path d="M700 520 l-60 -22 l14 18z" fill="${F.papier}" opacity=".4"/><circle cx="702" cy="521" r="6" fill="${F.papier}"/>
+      <circle cx="930" cy="120" r="18" fill="#b6a6d8"/>${sichel(930, 120, 18, 0.13, -35)}
       <g transform="translate(420 150) scale(.36)"><rect x="76" y="68" width="88" height="12" fill="${N.stahl}"/><g fill="${F.meer2}"><rect x="4" y="46" width="76" height="56" rx="6"/><rect x="160" y="46" width="76" height="56" rx="6"/></g><rect x="86" y="34" width="68" height="84" rx="14" fill="${N.bau}"/></g>`,
     cockpit: `<g fill="${N.stahl}"><circle cx="70" cy="110" r="26"/><circle cx="954" cy="110" r="26"/></g><g fill="${W.all}"><circle cx="70" cy="110" r="19"/><circle cx="954" cy="110" r="19"/></g>
       <path d="M70 110 L82 96 M954 110 L942 96" stroke="${F.koralle}" stroke-width="4" stroke-linecap="round"/>
@@ -789,7 +828,8 @@
     <path d="${welle(y + 44, 10)} V768 H0Z" fill="${F.meer2}" opacity=".55"/><path d="${welle(y + 110, 12)} V768 H0Z" fill="${F.tief}" opacity=".3"/>`;
 
   B.faehre = () => svg("0 0 250 140", faehre());
-  B.figurFaehre = () => svg("0 0 250 150", `<ellipse cx="125" cy="126" rx="122" ry="22" fill="${F.meer2}"/><ellipse cx="127" cy="128" rx="94" ry="5" fill="${F.tinte}" opacity=".13"/>${faehre()}
+  // Die Fähre als Tor. Seit v0.28.2 ohne eigene Wasserfläche: Sie liegt im Meer oder in der Bucht des kleinen Hafens (anleger).
+  B.figurFaehre = () => svg("0 0 250 150", `<ellipse cx="127" cy="128" rx="94" ry="5" fill="${F.tinte}" opacity=".13"/>${faehre()}
     <path d="M24 136 q12 -8 24 0 t24 0 M150 138 q12 -8 24 0 t24 0" stroke="${F.papier}" stroke-width="4" fill="none" stroke-linecap="round"/>`);
   B.wolke = () => svg("0 0 100 100", `<g fill="${F.papier}"><circle cx="34" cy="56" r="20"/><circle cx="56" cy="44" r="24"/><circle cx="74" cy="60" r="16"/><rect x="18" y="56" width="68" height="22" rx="11"/></g>`);
   // Fundstück am Hafen
@@ -1037,6 +1077,7 @@
     <path d="${welle(280, 12)} V326 H0Z" fill="${F.meer2}" opacity=".85"/>
     <path d="M0 322 Q200 292 430 310 T820 304 T1024 316 V768 H0Z" fill="${F.sand2}"/>
     <path d="M0 348 Q200 318 430 336 T820 330 T1024 342 V768 H0Z" fill="${F.sand}"/>
+    ${anleger(176, 322)}
     <!-- Sonnenschirm -->
     <ellipse cx="900" cy="486" rx="74" ry="9" fill="${F.tinte}" opacity=".13"/>
     <rect x="895" y="330" width="9" height="156" fill="${F.holz2}"/>
@@ -1052,8 +1093,8 @@
     <!-- Eimer, Förmchen, Sandhaufen -->
     <ellipse cx="142" cy="668" rx="36" ry="6" fill="${F.tinte}" opacity=".14"/>
     <g transform="translate(104 588) scale(.8)"><path d="M24 34 Q50 4 76 34" stroke="${F.tinte}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M18 34 H82 L72 92 Q50 98 28 92Z" fill="${F.koralle}"/><path d="M60 34 H82 L72 92 Q64 95 56 96Z" fill="#000" opacity=".13"/><rect x="14" y="28" width="72" height="12" rx="6" fill="#f59a8a"/></g>
-    <g transform="translate(206 628)">${sandDing({ h: 2 })}</g><g transform="translate(780 620)">${sandDing({ h: 1, deko: 3 })}</g>
-    <g transform="translate(250 700) scale(.3) rotate(-20)">${teil.muschel()}</g><g transform="translate(930 650) scale(.36)">${teil.seestern()}</g>
+    <g transform="translate(206 628)">${sandDing({ h: 2 })}</g><g transform="translate(780 620)">${sandDing({ h: 1, deko: 1 })}</g>
+    ${kieselHaufen(266, 716)}${treibholz(944, 676, 0.8, 6)}
     <g fill="${F.sand2}"><circle cx="420" cy="470" r="5"/><circle cx="700" cy="440" r="5"/><circle cx="330" cy="660" r="4"/><circle cx="520" cy="700" r="5"/><circle cx="960" cy="560" r="4"/><circle cx="90" cy="500" r="5"/>
       <ellipse cx="840" cy="700" rx="9" ry="6"/><ellipse cx="870" cy="716" rx="9" ry="6"/></g>`);
   // Einstieg auf der Buddelinsel: der Sandplatz mit einem Turm, einem Haufen mit Fahne und einem Wasserloch
@@ -1063,7 +1104,7 @@
     <path d="M190 144 q8 -5 16 0 t16 0 t16 0" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".6"/>
     <g transform="translate(54 44) scale(1.15)">${sandDing({ auf: 1 })}</g>
     <g transform="translate(122 50) scale(1.15)">${sandDing({ h: 2, deko: 1 })}</g>
-    <g transform="translate(88 96) scale(.3)">${teil.muschel()}</g>`);
+    ${kiesel(102, 112, 8)}`);
   // Hintergrund im Spiel: oben das Meer, darunter nasser und trockener Sand. Das Raster der Felder beginnt bei y = 184.
   B.buddelNah = () => svg("0 0 1024 768", `
     <rect width="1024" height="768" fill="${F.meer}"/>
@@ -1185,7 +1226,7 @@
     ${seeblume(250, 640, "#f48fb1")}${seeblume(292, 656, F.koralle)}${seeblume(736, 636, "#b565c9")}${seeblume(780, 652, "#f48fb1")}${seeblume(520, 628, F.koralle)}
     ${wiese(640, 34, 11)}
     <path d="M0 700 Q200 680 400 696 T800 692 T1024 686 V768 H0Z" fill="${F.sand}"/>
-    <g transform="translate(420 690) scale(.3)">${teil.muschel()}</g><g transform="translate(640 696) scale(.34)">${teil.seestern()}</g>
+    ${kieselHaufen(438, 716)}${korallenstueck(660, 732, "#f48fb1", 1.1)}${kiesel(694, 728, 8, "#a39378")}
     ${wiese(758, 26, 17, 1.15, ["#2f9566", SW.gras])}
     <g fill="none" stroke="#fff" stroke-width="3" opacity=".45"><circle cx="330" cy="330" r="8"/><circle cx="346" cy="292" r="5"/><circle cx="820" cy="430" r="7"/><circle cx="700" cy="250" r="6"/><circle cx="712" cy="222" r="4"/><circle cx="470" cy="160" r="5"/></g>`);
   B.wieseNah = () => svg("0 0 1024 768", `
@@ -1349,6 +1390,7 @@
     <path d="${welle(280, 12)} V326 H0Z" fill="${F.meer2}" opacity=".85"/>
     <path d="M0 322 Q200 292 430 310 T820 304 T1024 316 V768 H0Z" fill="${MALGRUND2}"/>
     <path d="M0 348 Q200 318 430 336 T820 330 T1024 342 V768 H0Z" fill="${MALGRUND}"/>
+    ${anleger(176, 322)}
     <!-- drei Farbeimer rechts hinten und ein bemalter Stein in der Mitte: beides hinter der Bodenlinie (y = 400) -->
     <g transform="translate(752 290) scale(1.05)">${farbeimer(MAL.rot)}</g><g transform="translate(866 278) scale(1.2)">${farbeimer(MAL.gelb)}</g><g transform="translate(808 318) scale(.85)">${farbeimer(MAL.blau)}</g>
     <g transform="translate(380 -84)">
@@ -1425,4 +1467,262 @@
       <rect x="30" y="46" width="40" height="34" rx="7" fill="${F.papier}"/><rect x="34" y="50" width="32" height="26" rx="4" fill="${F.tinte}"/>
       <text class="rover-anzeige" x="50" y="69" text-anchor="middle" font-family="Grundschrift, sans-serif" font-size="15" fill="#9ff3ff"></text>
     </g>`);
+
+  /* ---------- v0.28: Bahnhof (erster Ort der neuen Insel) und der Silbenzug ---------- */
+  const ZUG = { rot: "#d8483f", wiese: "#d3e3a8", wiese2: "#b9cf88", schotter: "#c9bfae", haus: "#f7e7c6", haus2: "#e8d3a6" };
+  // Rad von der Seite: Reifen, Nabe, Schatten unten, Glanz
+  const zugRad = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${F.tinte}"/><circle cx="${cx}" cy="${cy}" r="${z1(r * 0.4)}" fill="${F.sonne}"/>${sichel(cx, cy, r, 0.2)}${glanz(cx, cy, z1(r * 0.72), 205, 255, 3, 0.3)}`;
+  // Lok von der Seite (Platz 220 × 170). Sie schaut nach links: Dort fährt der Zug hin, und die Waggons hängen
+  // rechts an, damit die Silben in Leserichtung stehen. Die Räder stehen bei y = 162 auf der Schiene.
+  teil.lok = () => `
+    <ellipse cx="112" cy="164" rx="100" ry="5" fill="${F.tinte}" opacity=".13"/>
+    <rect x="198" y="112" width="18" height="9" rx="4" fill="${F.tinte}"/>
+    <path d="M6 150 L30 116 V150Z" fill="${F.tinte}"/>
+    <rect x="26" y="68" width="112" height="62" rx="20" fill="${ZUG.rot}"/>
+    <path d="M26 104 H138 V110 Q138 130 118 130 H46 Q26 130 26 110Z" fill="#000" opacity=".12"/>
+    <path d="M46 78 H118" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".3"/>
+    <rect x="120" y="34" width="80" height="96" rx="10" fill="${ZUG.rot}"/>
+    <path d="M120 106 H200 V120 Q200 130 190 130 H130 Q120 130 120 120Z" fill="#000" opacity=".12"/>
+    <rect x="134" y="48" width="52" height="38" rx="7" fill="${F.himmel}"/><path d="M138 52 H158 L142 72Z" fill="#fff" opacity=".5"/>
+    <rect x="112" y="24" width="96" height="14" rx="6" fill="${F.tinte}"/>
+    <rect x="44" y="34" width="22" height="38" fill="${F.tinte}"/><rect x="38" y="26" width="34" height="12" rx="5" fill="${F.tinte}"/>
+    <path d="M82 70 A16 16 0 0 1 114 70Z" fill="${F.sonne}"/><path d="M98 54 A16 16 0 0 1 114 70 H104 A10 10 0 0 0 98 60Z" fill="#000" opacity=".12"/>
+    <circle cx="30" cy="96" r="9" fill="${F.sonne}"/><circle cx="28" cy="94" r="3" fill="#fff" opacity=".6"/>
+    <rect x="20" y="126" width="184" height="10" rx="5" fill="${F.tinte}"/>
+    ${zugRad(150, 140, 22)}${zugRad(96, 140, 22)}${zugRad(44, 148, 14)}
+    <path d="M96 140 H150" stroke="${METALL}" stroke-width="6" stroke-linecap="round"/><circle cx="96" cy="140" r="4" fill="${METALL2}"/><circle cx="150" cy="140" r="4" fill="${METALL2}"/>`;
+  // Drei weitere Loks für den Silbenzug (seit v0.28.1), frei gezeichnet und nur im Umriss an echte Züge angelehnt,
+  // ohne Logos und ohne Schrift. Alle im selben Platz wie die Dampflok (220 × 170, Nase links, Räder bei y = 162,
+  // Kupplung rechts auf derselben Höhe), damit sie im Spiel austauschbar sind.
+  const ZUGWEISS = "#f4f6f8", ZUGROT = "#d23b34", ZUGBLAU = "#2b5fb4", ZUGGRAU = "#6f7c8a";
+  const zugUnten = (raeder, r) => `<ellipse cx="112" cy="164" rx="102" ry="5" fill="${F.tinte}" opacity=".13"/>
+    <rect x="198" y="112" width="18" height="9" rx="4" fill="${F.tinte}"/><rect x="22" y="132" width="184" height="10" rx="4" fill="${ZUGGRAU}"/>
+    ${raeder.map((x) => zugRad(x, 162 - r, r)).join("")}`;
+  // Schnellzug: weiße Hülle mit runder Nase, rotes Band, dunkles Fensterband (angelehnt an einen ICE)
+  teil.lokSchnell = () => `${zugUnten([56, 84, 150, 178], 11)}
+    <path d="M8 128 Q8 104 34 84 Q66 58 104 56 H196 Q206 56 206 66 V132 H18 Q8 132 8 128Z" fill="${ZUGWEISS}"/>
+    <path d="M9 122 H206 V132 H18 Q8 132 8 128Z" fill="#000" opacity=".1"/>
+    <path d="M15 106 H206 V115 H10 Q11 110 15 106Z" fill="${ZUGROT}"/>
+    <path d="M42 80 Q66 64 94 62 L86 86 Q62 88 40 96Z" fill="${F.tinte}"/><path d="M52 78 Q64 70 78 67 L74 78Z" fill="#fff" opacity=".3"/>
+    <rect x="106" y="67" width="92" height="23" rx="8" fill="${F.tinte}"/><path d="M112 71 H130 L116 85Z" fill="#fff" opacity=".25"/>
+    <path d="M106 57 H196" stroke="#c9d1d9" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="19" cy="122" r="4" fill="${F.sonne}"/>`;
+  // Kugelkopf-Zug: lange flache Nase, unten blau, oben weiß (angelehnt an einen Shinkansen)
+  teil.lokKugel = () => `${zugUnten([64, 92, 150, 178], 11)}
+    <path d="M4 130 Q22 116 54 98 Q98 74 132 65 Q152 60 172 60 H196 Q206 60 206 70 V132 H10 Q4 132 4 130Z" fill="${ZUGWEISS}"/>
+    <path d="M4 130 Q22 116 46 103 H206 V132 H10 Q4 132 4 130Z" fill="${ZUGBLAU}"/>
+    <path d="M6 126 H206 V132 H10 Q4 132 4 130Z" fill="#000" opacity=".14"/>
+    <path d="M114 73 Q130 67 148 65 L144 80 Q128 82 112 87Z" fill="${F.tinte}"/><path d="M120 74 Q130 70 140 68 L138 75Z" fill="#fff" opacity=".3"/>
+    <rect x="160" y="70" width="16" height="15" rx="4" fill="${F.tinte}"/><rect x="182" y="70" width="16" height="15" rx="4" fill="${F.tinte}"/>
+    <path d="M150 61 H196" stroke="#c9d1d9" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="32" cy="114" rx="8" ry="3.5" fill="${F.sonne}" transform="rotate(-28 32 114)"/>`;
+  // Regionalzug: kantige rote Lok mit großer Frontscheibe, hellem Band und Stromabnehmer (angelehnt an einen Regionalexpress)
+  teil.lokRegio = () => `${zugUnten([56, 90, 146, 180], 13)}
+    <path d="M128 52 L144 28 L160 52 M134 28 H154" stroke="${F.tinte}" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12 132 L24 66 Q26 52 42 52 H196 Q206 52 206 62 V132Z" fill="${ZUGROT}"/>
+    <path d="M13.5 122 H206 V132 H12Z" fill="#000" opacity=".13"/>
+    <path d="M16 106 H206 V114 H14.6Z" fill="${ZUGWEISS}"/>
+    <path d="M27 70 Q29 60 42 60 H76 V94 H22.6Z" fill="${F.tinte}"/><path d="M36 64 H56 L34 86Z" fill="#fff" opacity=".28"/>
+    <rect x="92" y="62" width="44" height="28" rx="6" fill="${F.tinte}"/><path d="M96 66 H112 L100 80Z" fill="#fff" opacity=".25"/>
+    <rect x="152" y="62" width="34" height="38" rx="6" fill="#000" opacity=".16"/><rect x="158" y="68" width="22" height="20" rx="4" fill="${F.tinte}"/>
+    <path d="M44 53 H194" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".28"/>
+    <circle cx="20" cy="122" r="4.5" fill="${F.sonne}"/>`;
+  // Waggon von der Seite (Platz 180 × 130) mit einem hellen Schild für die Silbe; Räder bei y = 124.
+  // streifen = Farbe eines Bandes unten am Wagen (bei den Wagen der drei neuen Züge)
+  teil.waggon = (farbe, streifen) => `
+    <ellipse cx="90" cy="125" rx="78" ry="4.5" fill="${F.tinte}" opacity=".13"/>
+    <rect x="0" y="78" width="14" height="9" rx="4" fill="${F.tinte}"/><rect x="166" y="78" width="14" height="9" rx="4" fill="${F.tinte}"/>
+    <rect x="10" y="30" width="160" height="70" rx="12" fill="${farbe}"/>
+    ${streifen ? `<path d="M10 90 H170 V93 Q170 97 168 99 H12 Q10 97 10 93Z" fill="${streifen}"/>` : ""}
+    <path d="M10 78 H170 V88 Q170 100 158 100 H22 Q10 100 10 88Z" fill="#000" opacity=".13"/>
+    <path d="M26 37 H154" stroke="${streifen ? "#c9d1d9" : "#fff"}" stroke-width="5" stroke-linecap="round" opacity="${streifen ? ".8" : ".3"}"/>
+    <rect class="zg-schild" x="22" y="43" width="136" height="46" rx="9" fill="${F.papier}" stroke="${F.tinte}" stroke-opacity=".16" stroke-width="2"/>
+    <rect x="14" y="96" width="152" height="9" rx="4.5" fill="${F.tinte}"/>
+    ${zugRad(48, 108, 16)}${zugRad(132, 108, 16)}`;
+  // Die Züge des Silbenzugs: Lok und die Farben ihrer Wagen (wagen = Farben der Reihe nach; streifen = Band am Wagen)
+  B.zuege = {
+    dampf: { lok: teil.lok, wagen: [MAL.blau, MAL.gruen, MAL.gelb, MAL.lila] },
+    schnell: { lok: teil.lokSchnell, wagen: [ZUGWEISS], streifen: ZUGROT },
+    kugel: { lok: teil.lokKugel, wagen: [ZUGWEISS], streifen: ZUGBLAU },
+    regio: { lok: teil.lokRegio, wagen: [ZUGROT], streifen: ZUGWEISS },
+  };
+  B.lok = (art) => svg("0 0 220 170", (B.zuege[art] || B.zuege.dampf).lok());
+  B.waggon = (farbe, streifen) => svg("0 0 180 130", teil.waggon(farbe, streifen));
+  // Schiene mit Schwellen von x0 bis x1; y = Oberkante der Schiene (dort stehen die Räder)
+  const gleis = (x0, x1, y) => {
+    let schwellen = "";
+    for (let x = x0 + 10; x < x1 - 20; x += 38) schwellen += `<rect x="${x}" y="${y + 5}" width="22" height="9" rx="3"/>`;
+    return `<rect x="${x0}" y="${y - 2}" width="${x1 - x0}" height="24" fill="${ZUG.schotter}" opacity=".7"/><g fill="${F.holz2}">${schwellen}</g>
+      <rect x="${x0}" y="${y}" width="${x1 - x0}" height="6" fill="${F.tinte}" opacity=".75"/><rect x="${x0}" y="${y}" width="${x1 - x0}" height="2" fill="#fff" opacity=".25"/>`;
+  };
+  // Runder Baum (Stamm bei x, Boden bei y)
+  const rundbaum = (x, y, r) => `<ellipse cx="${x}" cy="${y}" rx="${z1(r * 0.8)}" ry="5" fill="${F.tinte}" opacity=".13"/><rect x="${x - 6}" y="${z1(y - r * 1.1)}" width="12" height="${z1(r * 1.1)}" fill="${F.holz2}"/>
+    <circle cx="${x}" cy="${z1(y - r * 1.6)}" r="${r}" fill="${F.blatt}"/>${sichel(x, z1(y - r * 1.6), r, 0.14, -18)}${glanz(x, z1(y - r * 1.6), z1(r * 0.7), 200, 250, 4, 0.3)}`;
+  // Einstieg am Bahnhof: die Lok mit zwei leeren Waggons (das ist das Spiel Silbenzug)
+  B.figurLok = () => svg("0 0 360 190", `
+    <g transform="translate(4 70) scale(.68)">${teil.lok()}</g>
+    <g transform="translate(152 109) scale(.56)">${teil.waggon(MAL.blau)}</g><g transform="translate(250 109) scale(.56)">${teil.waggon(MAL.gelb)}</g>`);
+  // Bahnhof: Wiese am Meer, hinten das Bahnhofshaus mit Uhr und ein Signal, vorn das Gleis; die Fähre liegt links im Meer
+  B.bahnhof = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${F.himmel}"/>
+    <circle cx="180" cy="92" r="70" fill="#fff" opacity=".35"/><circle cx="180" cy="92" r="44" fill="${F.sonne}"/>
+    <g fill="#fff" opacity=".92"><ellipse cx="420" cy="84" rx="76" ry="22"/><ellipse cx="468" cy="68" rx="48" ry="22"/><ellipse cx="900" cy="110" rx="60" ry="17"/><ellipse cx="864" cy="98" rx="38" ry="16"/></g>
+    <g stroke="${F.tinte}" stroke-width="3.5" fill="none" stroke-linecap="round"><path d="M610 70 q9 -10 18 0 q9 -10 18 0"/><path d="M300 150 q7 -8 14 0 q7 -8 14 0"/></g>
+    <rect y="186" width="1024" height="170" fill="${F.meer}"/>
+    <path d="${welle(232, 10)} V262 H0Z" fill="${F.meer2}" opacity=".5"/>
+    <path d="${welle(280, 12)} V326 H0Z" fill="${F.meer2}" opacity=".85"/>
+    <path d="M0 322 Q200 292 430 310 T820 304 T1024 316 V768 H0Z" fill="${ZUG.wiese2}"/>
+    <path d="M0 348 Q200 318 430 336 T820 330 T1024 342 V768 H0Z" fill="${ZUG.wiese}"/>
+    ${anleger(176, 322)}
+    <!-- Bäume, Bahnhofshaus mit Uhr, Bahnsteig, Signal: alles hinter der Bodenlinie (y = 410) -->
+    ${rundbaum(440, 404, 40)}${rundbaum(506, 398, 30)}
+    <ellipse cx="730" cy="404" rx="170" ry="9" fill="${F.tinte}" opacity=".13"/>
+    <rect x="606" y="252" width="248" height="150" fill="${ZUG.haus}"/><rect x="800" y="252" width="54" height="150" fill="#000" opacity=".08"/>
+    <path d="M582 256 L730 188 L878 256Z" fill="${F.koralle}"/><path d="M730 188 L878 256 H800Z" fill="#000" opacity=".12"/>
+    <circle cx="730" cy="232" r="19" fill="${F.papier}"/><circle cx="730" cy="232" r="19" fill="none" stroke="${F.tinte}" stroke-width="4"/>
+    <path d="M730 232 V220 M730 232 L739 237" stroke="${F.tinte}" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M708 402 V338 Q708 314 730 314 Q752 314 752 338 V402Z" fill="${F.holz}"/><path d="M730 314 Q752 314 752 338 V402 H738 V326 Q738 318 730 314Z" fill="#000" opacity=".14"/><circle cx="716" cy="364" r="3.5" fill="${F.sonne}"/>
+    <g fill="${F.meer2}"><rect x="630" y="288" width="52" height="52" rx="7"/><rect x="778" y="288" width="52" height="52" rx="7"/></g>
+    <g fill="none" stroke="${F.papier}" stroke-width="5"><path d="M656 288 V340 M630 314 H682"/><path d="M804 288 V340 M778 314 H830"/></g>
+    <g fill="#fff" opacity=".4"><path d="M634 292 H650 L638 308Z"/><path d="M782 292 H798 L786 308Z"/></g>
+    <rect x="560" y="398" width="344" height="16" rx="5" fill="${F.stein}"/><rect x="560" y="398" width="344" height="5" rx="2.5" fill="${F.sonne}"/>
+    <rect x="952" y="250" width="9" height="154" fill="${F.tinte}"/><ellipse cx="956" cy="404" rx="22" ry="5" fill="${F.tinte}" opacity=".13"/>
+    <rect x="920" y="258" width="46" height="14" rx="4" fill="${F.koralle}"/><rect x="932" y="258" width="10" height="14" fill="${F.papier}"/>
+    <circle cx="956" cy="292" r="8" fill="${F.sonne}"/><circle cx="954" cy="290" r="2.5" fill="#fff" opacity=".6"/>
+    <!-- das Gleis: links der Prellbock, rechts läuft es aus dem Bild (dort geht es später weiter) -->
+    ${gleis(240, 1024, 620)}
+    <rect x="226" y="590" width="12" height="42" fill="${F.holz2}"/><rect x="216" y="586" width="32" height="14" rx="4" fill="${F.koralle}"/>
+    <!-- Koffer und Blumen -->
+    <ellipse cx="318" cy="470" rx="30" ry="5" fill="${F.tinte}" opacity=".13"/>
+    <rect x="292" y="430" width="52" height="38" rx="7" fill="${F.holz}"/><rect x="292" y="454" width="52" height="14" rx="6" fill="#000" opacity=".13"/><path d="M308 430 V424 Q308 418 314 418 H322 Q328 418 328 424 V430" stroke="${F.tinte}" stroke-width="4" fill="none"/>
+    <rect x="300" y="430" width="6" height="38" fill="${F.sonne}"/><rect x="330" y="430" width="6" height="38" fill="${F.sonne}"/>
+    <g fill="${F.papier}"><circle cx="90" cy="520" r="6"/><circle cx="150" cy="700" r="6"/><circle cx="930" cy="500" r="6"/><circle cx="860" cy="720" r="6"/><circle cx="470" cy="716" r="6"/></g>
+    <g fill="${F.sonne}"><circle cx="90" cy="520" r="2.5"/><circle cx="150" cy="700" r="2.5"/><circle cx="930" cy="500" r="2.5"/><circle cx="860" cy="720" r="2.5"/><circle cx="470" cy="716" r="2.5"/></g>
+    <g fill="${ZUG.wiese2}"><circle cx="420" cy="470" r="5"/><circle cx="560" cy="480" r="5"/><circle cx="700" cy="700" r="5"/><circle cx="60" cy="640" r="5"/><circle cx="980" cy="560" r="4"/></g>`);
+  // Hintergrund im Spiel: Himmel und Hügel, oben das Gleis, an dem der Zug entsteht, unten das Gleis mit den
+  // abgestellten Waggons. Die Höhen der Gleise stehen auch im Spiel (js/aufgaben/silbenzug.js).
+  B.zugNah = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${F.himmel}"/>
+    <g fill="#fff" opacity=".9"><ellipse cx="180" cy="150" rx="70" ry="20"/><ellipse cx="224" cy="136" rx="44" ry="19"/><ellipse cx="850" cy="190" rx="60" ry="17"/></g>
+    <path d="M0 330 Q170 250 360 320 T700 300 T1024 330 V768 H0Z" fill="${ZUG.wiese2}"/>
+    <path d="M0 372 Q512 344 1024 372 V768 H0Z" fill="${ZUG.wiese}"/>
+    ${gleis(0, 1024, 440)}
+    <path d="M0 520 Q512 500 1024 520 V768 H0Z" fill="${ZUG.haus2}"/><path d="M0 520 Q512 500 1024 520 V532 Q512 512 0 532Z" fill="#000" opacity=".1"/>
+    ${gleis(0, 1024, 668)}`);
+  // Schlüssel-Teil Pfeife (für den Bahnhof): eine Dampfpfeife aus Messing mit Dampfwolke
+  B.teilPfeife = () => svg("0 0 100 100", `
+    <g fill="#c8d6e2"><circle cx="72" cy="22" r="13"/><circle cx="86" cy="32" r="9"/><circle cx="60" cy="14" r="8"/></g>
+    <rect x="43" y="64" width="14" height="22" fill="${METALL}"/><rect x="30" y="82" width="40" height="12" rx="5" fill="${F.tinte}"/>
+    <rect x="32" y="28" width="36" height="40" rx="8" fill="${F.sonne}"/><path d="M50 28 H60 Q68 28 68 36 V60 Q68 68 60 68 H50Z" fill="#000" opacity=".12"/>
+    <path d="M32 30 Q50 12 68 30Z" fill="${F.sonne}"/><circle cx="50" cy="17" r="5" fill="${F.tinte}"/>
+    <rect x="38" y="44" width="24" height="7" rx="3.5" fill="${F.tinte}" opacity=".6"/>
+    <path d="M38 34 V60" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".4"/>`);
+  // Fundstück Fahrkarte (Silbenzug): ein gelochtes Kärtchen, schräg; Striche statt Schrift
+  B.fahrkarte = () => svg("0 0 100 100", `<g transform="rotate(-12 50 50)">
+    <path d="M10 30 H90 V43 A7 7 0 0 0 90 57 V70 H10 V57 A7 7 0 0 0 10 43Z" fill="#f6e3a1"/>
+    <path d="M10 60 H90 V70 H10Z" fill="#000" opacity=".1"/>
+    <path d="M10 30 H30 V70 H10 V57 A7 7 0 0 0 10 43Z" fill="${F.koralle}"/>
+    <path d="M36 32 V68" stroke="${F.tinte}" stroke-width="2.5" stroke-dasharray="4 4" opacity=".4"/>
+    <path d="M44 42 H78 M44 52 H68" stroke="${F.tinte}" stroke-width="5" stroke-linecap="round" opacity=".35"/><circle cx="76" cy="58" r="5" fill="${F.tinte}" opacity=".45"/>
+    <path d="M14 34 H86" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".4"/></g>`);
+
+  /* ---------- v0.29: Baustelle (zweiter Ort der neuen Insel) und die Zahlenmauer ---------- */
+  // Auf der Baustelle liegt keine Schraube als Deko herum: Die Schraube ist das Fundstück der Zahlenmauer.
+  const BAU = { gelb: "#f5b921", gelb2: "#d99a12", erde: "#e9d6ae", erde2: "#d3b988", ziegel: "#d9825b", ziegel2: "#bf6a46", beton: "#b9b4ab" };
+  B.bauFarben = BAU;
+  // Mast eines Turmkrans: zwei Holme mit Zickzack dazwischen, von y0 (unten) bis y1 (oben)
+  const kranMast = (x, y0, y1) => {
+    let zick = "";
+    for (let y = y0; y - 40 >= y1; y -= 40) zick += `M${x - 15} ${y} L${x + 15} ${y - 20} L${x - 15} ${y - 40} `;
+    return `<path d="${zick}" stroke="${BAU.gelb2}" stroke-width="4" fill="none" stroke-linejoin="round"/>
+      <path d="M${x - 15} ${y0} V${y1} M${x + 15} ${y0} V${y1}" stroke="${BAU.gelb}" stroke-width="8" stroke-linecap="round"/>`;
+  };
+  // Ausleger: Balken von x1 nach x2 auf Höhe y, dazu die Abspannung zur Mastspitze (xm, ys)
+  const kranArm = (x1, x2, y, xm, ys) => `<path d="M${xm} ${ys} L${z1(x1 + (xm - x1) * 0.35)} ${y} M${xm} ${ys} L${z1(x2 + (xm - x2) * 0.35)} ${y}" stroke="${F.tinte}" stroke-width="3" opacity=".7"/>
+    <rect x="${Math.min(x1, x2)}" y="${y - 7}" width="${Math.abs(x2 - x1)}" height="14" rx="5" fill="${BAU.gelb}"/><rect x="${Math.min(x1, x2)}" y="${y + 1}" width="${Math.abs(x2 - x1)}" height="6" rx="3" fill="#000" opacity=".13"/>`;
+  // Seil mit Haken: von (x, y0) hinunter bis y1
+  const kranHaken = (x, y0, y1) => `<path d="M${x} ${y0} V${y1}" stroke="${F.tinte}" stroke-width="3"/><rect x="${x - 9}" y="${y1 - 4}" width="18" height="12" rx="4" fill="${F.tinte}"/>
+    <path d="M${x} ${y1 + 8} v8 q0 10 -9 10 q-8 0 -8 -8" stroke="${F.tinte}" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+  // Ziegelstein: Platz b × h bei (x, y), mit dunklerem unteren Rand und hellem Strich oben
+  const ziegel = (x, y, b = 80, h = 44) => `<rect x="${x}" y="${y}" width="${b}" height="${h}" rx="8" fill="${BAU.ziegel}"/>
+    <path d="M${x} ${z1(y + h * 0.66)} H${x + b} V${y + h - 8} Q${x + b} ${y + h} ${x + b - 8} ${y + h} H${x + 8} Q${x} ${y + h} ${x} ${y + h - 8}Z" fill="#000" opacity=".14"/>
+    <path d="M${x + 12} ${y + 8} H${x + b - 12}" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".3"/>`;
+  // Absperrhütchen (Fuß bei x, y)
+  const huetchen = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><ellipse cx="0" cy="2" rx="22" ry="4.5" fill="${F.tinte}" opacity=".13"/>
+    <rect x="-20" y="-6" width="40" height="8" rx="3" fill="#e8662f"/><path d="M-13 -6 L-4 -46 H4 L13 -6Z" fill="#e8662f"/><path d="M-9.4 -22 H9.4 L7.2 -32 H-7.2Z" fill="${F.papier}"/>
+    <path d="M4 -46 L13 -6 H5 L0 -46Z" fill="#000" opacity=".13"/></g>`;
+  // Bagger (Platz 260 × 200), schaut nach links: Ketten, gelber Aufbau mit Kabine, Arm mit Schaufel
+  const bagger = () => `<ellipse cx="140" cy="193" rx="118" ry="6" fill="${F.tinte}" opacity=".13"/>
+    <rect x="52" y="150" width="184" height="40" rx="20" fill="${F.tinte}"/>
+    <g fill="#8794a1">${[76, 116, 156, 196].map((x) => `<circle cx="${x}" cy="170" r="11"/>`).join("")}</g><g fill="${F.tinte}">${[76, 116, 156, 196].map((x) => `<circle cx="${x}" cy="170" r="4"/>`).join("")}</g>
+    <path d="M110 104 L52 34 L22 104" stroke="${BAU.gelb}" stroke-width="18" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M114 110 L56 40" stroke="#000" stroke-width="5" stroke-linecap="round" opacity=".13"/>
+    <circle cx="52" cy="34" r="7" fill="${F.tinte}"/><circle cx="110" cy="104" r="7" fill="${F.tinte}"/>
+    <path d="M4 98 H40 L33 134 Q18 140 6 126Z" fill="${F.tinte}"/><path d="M8 134 l4 10 M18 138 l4 10 M28 136 l4 10" stroke="${F.tinte}" stroke-width="5" stroke-linecap="round"/>
+    <rect x="92" y="86" width="132" height="68" rx="10" fill="${BAU.gelb}"/><path d="M92 128 H224 V144 Q224 154 214 154 H102 Q92 154 92 144Z" fill="#000" opacity=".13"/>
+    <rect x="150" y="44" width="66" height="62" rx="9" fill="${BAU.gelb}"/><rect x="158" y="52" width="50" height="34" rx="5" fill="${F.himmel}"/><path d="M162 56 H180 L166 74Z" fill="#fff" opacity=".5"/>
+    <path d="M104 94 H140" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".35"/>`;
+  // Baustelle: Kran, Bagger, Sandhaufen, Bauzaun und Hütchen; links kommt das Gleis vom Bahnhof herein und endet hier
+  B.baustelle = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${F.himmel}"/>
+    <circle cx="860" cy="92" r="70" fill="#fff" opacity=".35"/><circle cx="860" cy="92" r="44" fill="${F.sonne}"/>
+    <g fill="#fff" opacity=".92"><ellipse cx="610" cy="86" rx="76" ry="22"/><ellipse cx="658" cy="70" rx="48" ry="22"/><ellipse cx="330" cy="150" rx="58" ry="17"/></g>
+    <path d="M0 330 Q170 250 360 320 T700 300 T1024 330 V768 H0Z" fill="${ZUG.wiese2}"/>
+    <path d="M0 372 Q260 346 520 364 T1024 358 V768 H0Z" fill="${BAU.erde2}"/>
+    <path d="M0 398 Q260 372 520 390 T1024 384 V768 H0Z" fill="${BAU.erde}"/>
+    <!-- Bauzaun hinten -->
+    <g fill="${F.holz2}">${[300, 380, 460, 540, 620, 700].map((x) => `<rect x="${x}" y="352" width="8" height="48" rx="3"/>`).join("")}</g>
+    <rect x="296" y="358" width="416" height="12" rx="4" fill="${F.papier}"/><g fill="${F.koralle}">${[0, 1, 2, 3, 4, 5, 6].map((i) => `<rect x="${306 + i * 60}" y="358" width="30" height="12"/>`).join("")}</g>
+    <rect x="296" y="380" width="416" height="8" rx="4" fill="${F.holz}"/>
+    <!-- Turmkran links -->
+    <ellipse cx="150" cy="404" rx="56" ry="7" fill="${F.tinte}" opacity=".13"/>
+    <rect x="118" y="388" width="64" height="16" rx="5" fill="${BAU.beton}"/>
+    ${kranMast(150, 388, 108)}${kranArm(150, 520, 108, 150, 62)}${kranArm(150, 74, 108, 150, 62)}
+    <path d="M135 108 L150 58 L165 108Z" fill="${BAU.gelb}"/><rect x="60" y="100" width="34" height="30" rx="5" fill="${BAU.beton}"/>
+    <rect x="166" y="116" width="40" height="34" rx="6" fill="${BAU.gelb}"/><rect x="172" y="122" width="28" height="18" rx="4" fill="${F.himmel}"/>
+    ${kranHaken(430, 114, 214)}
+    <!-- Sandhaufen und Bagger rechts hinten -->
+    <ellipse cx="800" cy="402" rx="84" ry="8" fill="${F.tinte}" opacity=".12"/><path d="M724 400 Q746 334 800 330 Q856 336 876 400Z" fill="${F.sand3}"/><path d="M800 330 Q856 336 876 400 H830 Q842 356 800 330Z" fill="#000" opacity=".12"/>
+    <g transform="translate(770 214) scale(.98)">${bagger()}</g>
+    <!-- das Gleis vom Bahnhof endet hier an einem Prellbock -->
+    ${gleis(0, 330, 620)}
+    <rect x="328" y="590" width="12" height="42" fill="${F.holz2}"/><rect x="318" y="586" width="32" height="14" rx="4" fill="${F.koralle}"/>
+    <!-- Bretterstapel, Hütchen, Steine im Boden -->
+    <ellipse cx="170" cy="716" rx="70" ry="7" fill="${F.tinte}" opacity=".13"/>
+    <g fill="${F.holz}"><rect x="104" y="694" width="132" height="10" rx="3"/><rect x="110" y="682" width="126" height="10" rx="3"/><rect x="104" y="670" width="124" height="10" rx="3"/></g>
+    <g fill="#000" opacity=".12"><rect x="104" y="700" width="132" height="4"/><rect x="110" y="688" width="126" height="4"/><rect x="104" y="676" width="124" height="4"/></g>
+    ${huetchen(420, 470)}${huetchen(900, 600, 1.1)}${huetchen(470, 712, 0.9)}
+    <g fill="${BAU.erde2}"><circle cx="540" cy="440" r="5"/><circle cx="300" cy="500" r="5"/><circle cx="760" cy="690" r="5"/><circle cx="960" cy="470" r="4"/><circle cx="60" cy="470" r="5"/>
+      <ellipse cx="820" cy="520" rx="9" ry="6"/><ellipse cx="850" cy="538" rx="9" ry="6"/></g>`);
+  // Einstieg auf der Baustelle: die halb fertige Mauer, oben fehlt ein Stein, darüber hängt der Kranhaken
+  B.figurMauer = () => svg("0 0 300 200", `
+    <ellipse cx="150" cy="190" rx="140" ry="8" fill="${F.tinte}" opacity=".13"/><rect x="18" y="176" width="264" height="14" rx="5" fill="${BAU.beton}"/>
+    ${ziegel(27, 130)}${ziegel(110, 130)}${ziegel(193, 130)}${ziegel(68, 84)}${ziegel(151, 84)}
+    <rect x="112" y="40" width="76" height="40" rx="8" fill="none" stroke="${BAU.ziegel2}" stroke-width="4" stroke-dasharray="9 7"/>
+    ${kranHaken(150, 0, 12)}`);
+  // Hintergrund im Spiel: Himmel und Hügel, rechts der Turmkran mit einem langen Ausleger über die ganze Breite
+  // (an ihm fährt im Spiel das Seil), unten die Erde mit einer Holzpalette für die Steine zur Wahl
+  B.mauerNah = () => svg("0 0 1024 768", `
+    <rect width="1024" height="768" fill="${F.himmel}"/>
+    <g fill="#fff" opacity=".9"><ellipse cx="240" cy="190" rx="70" ry="20"/><ellipse cx="284" cy="176" rx="44" ry="19"/><ellipse cx="760" cy="230" rx="60" ry="17"/></g>
+    <path d="M0 470 Q170 400 360 456 T700 440 T1024 466 V768 H0Z" fill="${ZUG.wiese2}"/>
+    <path d="M0 548 Q512 522 1024 548 V768 H0Z" fill="${BAU.erde2}"/><path d="M0 572 Q512 546 1024 572 V768 H0Z" fill="${BAU.erde}"/>
+    <rect x="916" y="544" width="72" height="18" rx="5" fill="${BAU.beton}"/>
+    ${kranMast(952, 544, 104)}${kranArm(952, 96, 104, 952, 50)}${kranArm(952, 1016, 104, 952, 50)}
+    <path d="M937 104 L952 46 L967 104Z" fill="${BAU.gelb}"/><rect x="984" y="96" width="34" height="30" rx="5" fill="${BAU.beton}"/>
+    <rect x="896" y="112" width="40" height="34" rx="6" fill="${BAU.gelb}"/><rect x="902" y="118" width="28" height="18" rx="4" fill="${F.himmel}"/>
+    <ellipse cx="512" cy="734" rx="372" ry="9" fill="${F.tinte}" opacity=".12"/>
+    <rect x="150" y="702" width="724" height="14" rx="4" fill="${F.holz}"/><rect x="150" y="710" width="724" height="6" rx="3" fill="#000" opacity=".13"/>
+    <g fill="${F.holz2}">${[170, 400, 600, 830].map((x) => `<rect x="${x}" y="716" width="26" height="16" rx="3"/>`).join("")}</g>`);
+  // Schlüssel-Teil Bauhelm (für die Baustelle): gelber Helm mit Steg und Krempe
+  B.teilBauhelm = () => svg("0 0 100 100", `
+    <path d="M14 68 Q14 26 50 24 Q86 26 86 68Z" fill="${BAU.gelb}"/><path d="M50 24 Q86 26 86 68 H68 Q72 38 50 24Z" fill="#000" opacity=".12"/>
+    <rect x="43" y="18" width="14" height="50" rx="6" fill="${BAU.gelb2}"/><rect x="6" y="64" width="88" height="14" rx="7" fill="${BAU.gelb2}"/>
+    <path d="M24 56 Q26 40 38 33" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".45"/>`);
+  // Fundstück Schraube (Zahlenmauer): Sechskantkopf und Schaft mit Gewinde, schräg
+  B.schraube = () => svg("0 0 100 100", `<g transform="rotate(-35 50 50)">
+    <rect x="38" y="32" width="24" height="60" rx="7" fill="${METALL}"/><path d="M50 32 H55 Q62 32 62 39 V85 Q62 92 55 92 H50Z" fill="#000" opacity=".13"/>
+    <path d="M38 50 L62 56 M38 62 L62 68 M38 74 L62 80" stroke="${METALL2}" stroke-width="4"/>
+    <path d="M26 10 H74 L84 23 L74 36 H26 L16 23Z" fill="#7d8a96"/><path d="M50 10 H74 L84 23 L74 36 H50Z" fill="#000" opacity=".14"/>
+    <path d="M30 17 H58" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".4"/></g>`);
 })();

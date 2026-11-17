@@ -20,7 +20,9 @@
  *            Anfang an zur Wahl, ihre Sorten kommen deshalb vom Strand und vom Hafen (beide sind immer offen).
  *   fertig   wird nach dem Bauen gesprochen: was die Figur jetzt kann und wo es weitergeht
  *
- * Nach dem letzten Schlüssel-Teil geht es links mit Treibstoff weiter (siehe unten und js/planeten.js).
+ * Nach dem letzten Schlüssel-Teil der Hauptreihe („reihenfolge“) geht es links mit Treibstoff weiter (siehe unten
+ * und js/planeten.js). Seit v0.28 wechselt er sich mit den Teilen für die neue Insel ab („insel“): erst ein Tank,
+ * dann ein Insel-Teil, wieder ein Tank … Sind alle Insel-Teile gebaut, gibt es links nur noch Treibstoff.
  *
  * NEUES BAUTEIL? Bild zeichnen, hier eintragen, in „reihenfolge“ oder „werkzeuge“ aufnehmen, beim Ort „braucht“ setzen.
  */
@@ -29,6 +31,8 @@
 App.inhalt.bauteile = {
   preis: 2,   // Vorgabe: Fundstücke je Sorte (2 + 2 = vier Aufgaben). Im Elternbereich einstellbar (1 bis 3).
   reihenfolge: ["propeller", "kompass", "lampe", "triebwerk"],
+  // Schlüssel-Teile für die neue Insel (Bahnhof, später Baustelle und Dschungel): nach dem Triebwerk, im Wechsel mit Treibstoff
+  insel: ["pfeife", "bauhelm"],
   // Werkzeuge, der Reihe nach: Beim Krebs steht immer das nächste als zweiter Bauplan zur Wahl.
   // Zuerst kommen die Werkzeuge, deren Spielplatz die Fähre erreicht (seit v0.27).
   werkzeuge: ["schaufel", "farbreifen", "fernrohr", "greifarm"],
@@ -52,6 +56,17 @@ App.inhalt.bauteile = {
       bild: "teilTriebwerk", name: "Triebwerk", einen: "ein Triebwerk", den: "das Triebwerk", mit: "einem Triebwerk",
       aus: ["stern", "planet"],
       fertig: "Jetzt kann die Rakete starten! Fahr an der Raketenstation durch die Tür.",
+    },
+    // Teile für die neue Insel („insel“). Ihre Sorten gibt es erst nach dem Triebwerk (in der Rakete und im Weltraum).
+    pfeife: {
+      bild: "teilPfeife", name: "Pfeife", einen: "eine Pfeife", den: "die Pfeife", mit: "einer Pfeife",
+      aus: ["zahnrad", "komet"],
+      fertig: "Jetzt kann ich pfeifen wie ein Zug! Die Fähre am Hafen bringt mich zum Bahnhof.",
+    },
+    bauhelm: {
+      bild: "teilBauhelm", name: "Bauhelm", einen: "einen Bauhelm", den: "den Bauhelm", mit: "einem Bauhelm",
+      aus: ["fahrkarte", "schnecke"],
+      fertig: "Jetzt habe ich einen Helm! Am Bahnhof geht es rechts zur Baustelle.",
     },
     // Werkzeuge öffnen einen Spielplatz („braucht“ am Ort, z. B. die Buddelinsel) und die Verstecke an schon
     // bekannten Orten („entdeckungen“ mit „werkzeug“ in inhalt/welt.js). Ihre Sorten gibt es am Strand und am Hafen.
@@ -85,5 +100,5 @@ App.inhalt.bauteile = {
     },
   },
   // Sorten für den Treibstoff, der Reihe nach und dann wieder von vorn: immer eine aus Deutsch und eine aus Mathe
-  paare: [["muschel", "perle"], ["seestern", "muenze"], ["feder", "planet"], ["flasche", "anker"], ["stern", "komet"], ["zahnrad", "boje"], ["flasche", "schnecke"]],
+  paare: [["muschel", "perle"], ["seestern", "muenze"], ["feder", "planet"], ["flasche", "anker"], ["stern", "komet"], ["zahnrad", "boje"], ["flasche", "schnecke"], ["fahrkarte", "boje"], ["zahnrad", "schraube"]],
 };

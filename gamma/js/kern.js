@@ -1,7 +1,7 @@
 /* kern.js – Grundgerüst der App: Namensraum, Protokoll, Speicher, Sprache, Töne, Aufnahmen */
 "use strict";
 
-const App = { VERSION: "0.27.2", inhalt: {}, aufgaben: {}, bilder: {} };
+const App = { VERSION: "0.29.1", inhalt: {}, aufgaben: {}, bilder: {} };
 
 (() => {
   /* ---------- Kleine Hilfen ---------- */
@@ -51,11 +51,11 @@ const App = { VERSION: "0.27.2", inhalt: {}, aufgaben: {}, bilder: {} };
   const standardSpiel = () => ({
     ort: null,                                    // Ort, an dem die Figur gerade ist
     besucht: {},                                  // Orte, die schon entdeckt wurden (für die Karte)
-    fund: { muschel: 0, seestern: 0, perle: 0, stern: 0, planet: 0, rakete: 0, feder: 0, flasche: 0, muenze: 0, komet: 0, zahnrad: 0, anker: 0, boje: 0, schnecke: 0 },   // Fundstücke in der Schatzkiste
+    fund: { muschel: 0, seestern: 0, perle: 0, stern: 0, planet: 0, rakete: 0, feder: 0, flasche: 0, muenze: 0, komet: 0, zahnrad: 0, anker: 0, boje: 0, schnecke: 0, fahrkarte: 0, schraube: 0 },   // Fundstücke in der Schatzkiste
     entdeckt: {},                                 // gefundene Verstecke (zurzeit ungenutzt)
     buchstaben: {},                               // "M": { richtig, fehler, gespurt }
     zahlen: {},                                   // "7": { richtig, fehler }
-    mengenStufe: 0, plusStufe: 0, reiheStufe: 0, vergleichStufe: 0, winkStufe: 0, strahlStufe: 0, blitzStufe: 0,
+    mengenStufe: 0, plusStufe: 0, reiheStufe: 0, vergleichStufe: 0, winkStufe: 0, strahlStufe: 0, blitzStufe: 0, zugStufe: 0, mauerStufe: 0,
     teile: {},                                    // gebaute Bauteile: { propeller: 1 } (siehe inhalt/bauteile.js)
     treibstoff: 0,                                // volle Tanks: jeder reicht für eine Reise zu einem neuen Planeten
     tanks: 0,                                     // so viele Tanks hat der Krebs schon gemacht (bestimmt die Sorten des nächsten)
@@ -168,6 +168,18 @@ const App = { VERSION: "0.27.2", inhalt: {}, aufgaben: {}, bilder: {} };
 
   // Stufe hoch? Nur wenn (fast) alles auf Anhieb richtig war; bei kurzen Spielen (bis 3 Aufgaben) alles.
   App.sicher = (aufAnhieb, runden) => aufAnhieb >= Math.max(runden - 1, Math.min(runden, 3));
+  // Sind alle Buchstaben des Wortes aktiv? (au, ei, eu, sch zählen als eigene Lautverbindung.) Für „Wörter lesen“
+  // und den „Silbenzug“: Es kommen nur Wörter dran, die das Kind schon lesen kann. Geprüft wird Silbe für Silbe:
+  // In „Mu-se-um“ treffen e und u nur an der Silbengrenze aufeinander, das ist kein „eu“.
+  App.lesbar = (silben, aktiv) => silben.every((silbe) => {
+    let w = silbe.toLowerCase();
+    for (const g of ["sch", "ei", "au", "eu"]) {
+      if (!w.includes(g)) continue;
+      if (!aktiv.includes(g[0].toUpperCase() + g.slice(1))) return false;
+      w = w.split(g).join("");
+    }
+    return Array.from(w).every((c) => aktiv.includes(c.toUpperCase()));
+  });
   // Buchstaben, die gerade geübt werden (mindestens drei, sonst gilt die Vorgabe)
   App.buchstabenAktiv = () => {
     const BU = App.inhalt.buchstaben;

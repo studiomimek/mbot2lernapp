@@ -11,6 +11,7 @@
     stern: ["einen Stern", "Sterne"], planet: ["einen Planeten", "Planeten"], rakete: ["eine kleine Rakete", "kleine Raketen"],
     feder: ["eine Papageienfeder", "Papageienfedern"], flasche: ["eine Flaschenpost", "Flaschen"], muenze: ["eine Goldmünze", "Goldmünzen"],
     komet: ["einen Kometen", "Kometen"], zahnrad: ["ein Zahnrad", "Zahnräder"], anker: ["einen Anker", "Anker"], boje: ["eine Boje", "Bojen"], schnecke: ["ein Schneckenhaus", "Schneckenhäuser"],
+    fahrkarte: ["eine Fahrkarte", "Fahrkarten"], schraube: ["eine Schraube", "Schrauben"],
   };
   const ZAHLWORT = ["null", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn"];
   const BILDNAME = { krebs: "Krebs", fisch: "Fisch", seestern: "Seestern", planet: "Planet", stern: "Stern", muschel: "Muschel" };   // Spieler-Bilder
@@ -194,13 +195,22 @@
    * werden sie aus der Schatzkiste genommen. */
   const BT = () => App.inhalt.bauteile;
   const preis = () => { const p = Math.round(+App.stand.einst.preis); return p >= 1 && p <= 3 ? p : BT().preis; };
-  const naechstesSchluessel = () => BT().reihenfolge.find((id) => !App.stand.teile[id]) || "treibstoff";
+  // Das nächste Schlüssel-Teil (linker Bauplan): erst die Hauptreihe bis zum Triebwerk. Danach wechseln sich
+  // Treibstoff und die Teile für die neue Insel ab: erst ein Tank, dann ein Insel-Teil, wieder ein Tank … Ein
+  // Insel-Teil ist also dran, wenn schon mehr Tanks gemacht sind als Insel-Teile gebaut. Am Ende bleibt Treibstoff.
+  const inselTeile = () => BT().insel || [];
+  const naechstesSchluessel = () => {
+    const haupt = BT().reihenfolge.find((id) => !App.stand.teile[id]);
+    if (haupt) return haupt;
+    const offen = inselTeile().find((id) => !App.stand.teile[id]), gebaut = inselTeile().filter((id) => App.stand.teile[id]).length;
+    return offen && (App.stand.tanks || 0) > gebaut ? offen : "treibstoff";
+  };
   const naechstesWerkzeug = () => BT().werkzeuge.find((id) => !App.stand.teile[id]) || null;
   const plaene = () => [naechstesSchluessel(), naechstesWerkzeug()].filter(Boolean);   // die Baupläne beim Krebs: einer oder zwei
   // Das Teil, an dem gerade gebaut wird (der gewählte Bauplan). Funk-Krebs, Karte und Abzeichen zeigen dieses Teil.
   const naechstesTeil = () => (App.stand.bauplan === "werkzeug" && naechstesWerkzeug()) || naechstesSchluessel();
   const fertigePlaene = () => plaene().filter((id) => bereit(id));   // Baupläne, für die schon alles da ist
-  const alleTeile = () => [...BT().reihenfolge, ...BT().werkzeuge];
+  const alleTeile = () => [...BT().reihenfolge, ...inselTeile(), ...BT().werkzeuge];
   const sorten = (id) => (id === "treibstoff" ? BT().paare[(App.stand.tanks || 0) % BT().paare.length] : BT().teile[id].aus);
   const rezept = (id) => sorten(id).map((art) => ({ art, soll: preis(), da: Math.min(preis(), App.stand.fund[art] || 0) }));
   const bereit = (id) => !!id && rezept(id).every((r) => r.da >= r.soll);
@@ -472,7 +482,7 @@
       `<div class="truhe-reihe">${Array.from({ length: Math.min(z, 10) }, () => `<span>${B[art]()}</span>`).join("")}${z > 10 ? `<b>+${z - 10}</b>` : ""}</div>`).join("");
     // Zwei Reihen: die Schlüssel-Teile (mit den vollen Tanks) und darunter der Werkzeugkasten
     const gebaut = (liste) => liste.filter((id) => App.stand.teile[id]).map((id) => `<span>${B[BT().teile[id].bild]()}</span>`).join("");
-    const teile = gebaut(BT().reihenfolge), werkzeuge = gebaut(BT().werkzeuge);
+    const teile = gebaut([...BT().reihenfolge, ...inselTeile()]), werkzeuge = gebaut(BT().werkzeuge);
     const tanks = Array.from({ length: Math.min(App.stand.treibstoff || 0, 6) }, () => `<span>${B.teilTreibstoff()}</span>`).join("");
     // Reisealbum: die zuletzt besuchten Planeten mit Namen. Antippen fliegt noch einmal hin (kostet nichts).
     const album = App.stand.reisen.slice(-12).map((r) => `<button class="album-ziel" data-z="${r.z}">${App.planeten.kleinBild(r.z, r.art)}<b>${r.name}</b></button>`).join("");
@@ -833,7 +843,9 @@
     ["mengenStufe", "Mengen (Fische)", App.inhalt.mengen.stufen],
     ["blitzStufe", "Blitzblick (Quallen)", App.inhalt.rechnen.blitz],
     ["plusStufe", "Plus (Sterne)", App.inhalt.rechnen.plus],
+    ["mauerStufe", "Zahlenmauer (Baustelle)", App.inhalt.rechnen.mauer],
     ["reiheStufe", "Zahlenreihe", App.inhalt.rechnen.reihe],
+    ["zugStufe", "Silbenzug (Bahnhof)", App.inhalt.zugStufen],
     ["strahlStufe", "Zahlenstrahl (Steg)", App.inhalt.rechnen.strahl],
     ["vergleichStufe", "Vergleichen (Münzen)", App.inhalt.rechnen.vergleichen],
     ["winkStufe", "Winken zählen", App.inhalt.rechnen.winken],

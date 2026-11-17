@@ -1,4 +1,4 @@
-/* inhalt/rechnen.js – Stufen für „Plus rechnen“ und „Zahlenreihe“
+/* inhalt/rechnen.js – Stufen für die Mathe-Spiele (Plus, Vergleichen, Winken, Zahlenstrahl, Blitzblick, Zahlenmauer, Zahlenreihe)
  * Die nächste Stufe öffnet sich, wenn in einer Runde höchstens eine Antwort nicht auf Anhieb stimmte.
  * Alle Stufen lassen sich im Elternbereich von Hand umstellen.
  */
@@ -35,6 +35,15 @@ App.inhalt.rechnen = {
     { name: "bis 6, Würfelbild", von: 2, bis: 6, anordnung: "wuerfel", zeit: 1000, auswahl: 3 },
     { name: "bis 8, zwei Gruppen", von: 4, bis: 8, anordnung: "gruppen", zeit: 1200, auswahl: 4 },
     { name: "bis 10 im Zehnerfeld", von: 5, bis: 10, anordnung: "zehnerfeld", zeit: 1400, auswahl: 4 },
+  ],
+  // Zahlenmauer (Baustelle): Zwei Zahlen nebeneinander ergeben zusammen die Zahl darüber. reihen = 2 (drei Steine)
+  // oder 3 (sechs Steine). fehlt: "oben" (die Summe ist gesucht), "unten" (ergänzen) oder "zwei" (große Mauer:
+  // erst fehlt ein Stein in der Mitte, dann der oberste). bis = größte Zahl, die in der Mauer vorkommt.
+  mauer: [
+    { name: "oben fehlt, bis 5", reihen: 2, fehlt: "oben", bis: 5, auswahl: 3 },
+    { name: "oben fehlt, bis 10", reihen: 2, fehlt: "oben", bis: 10, auswahl: 4 },
+    { name: "unten fehlt (ergänzen), bis 10", reihen: 2, fehlt: "unten", bis: 10, auswahl: 4 },
+    { name: "große Mauer mit zwei Lücken, bis 10", reihen: 3, fehlt: "zwei", bis: 10, auswahl: 4 },
   ],
   // Zahlenreihe: fünf Zahlen, eine fehlt
   reihe: [

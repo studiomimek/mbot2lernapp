@@ -539,6 +539,8 @@ button svg, .rover svg, .abzeichen svg, .schloss svg { display: block; width: 10
 .anbau svg { display: block; width: 100%; height: auto; }
 .anbau-propeller { right: -20%; top: 34%; width: 40%; animation: drehen .9s linear infinite; }
 .anbau-lampe { left: 31%; top: -38%; width: 38%; }
+.anbau-pfeife { left: 4%; top: -30%; width: 30%; }                   /* am Bahnhof: die Pfeife links oben auf der Figur */
+.anbau-bauhelm { left: 27%; top: -27%; width: 46%; }                 /* auf der Baustelle: der Helm sitzt oben auf der Anzeige */
 
 /* ---------- v0.13: Reisen zu Planeten, Bewohner, Reisealbum ---------- */
 @keyframes flugsterne { to { transform: translateY(768px); } }
@@ -992,3 +994,68 @@ button svg, .rover svg, .abzeichen svg, .schloss svg { display: block; width: 10
   background: repeating-linear-gradient(100deg, rgba(47, 159, 181, 0) 0 16px, rgba(47, 159, 181, .6) 16px 20px, rgba(47, 159, 181, 0) 20px 38px), rgba(88, 185, 201, .28);
   animation: maRegen 1.5s linear forwards;
 }
+
+/* ---------- v0.28: Silbenzug am Bahnhof (js/aufgaben/silbenzug.js) ---------- */
+/* Oben das Bild des Wortes, darunter das Gleis mit der Lok (sie schaut nach links), unten das Gleis mit den
+   abgestellten Waggons. Die Höhen der Gleise stehen im Spiel und in B.zugNah. */
+.zg-bild { position: absolute; left: 437px; top: 92px; width: 150px; height: 150px; border-radius: 34px; font-size: 96px; line-height: 150px; text-align: center; }
+.zg-lok { position: absolute; width: 198px; pointer-events: none; transition: transform 1.2s ease-out; }   /* Einfahrt von links */
+.zg-lok svg { display: block; width: 100%; height: auto; }
+/* Ein Waggon ist ein Knopf: antippen hängt ihn an (er rollt dann an seinen Platz hinter der Lok) */
+.zg-waggon { position: absolute; width: 170px; transition: left .5s ease-in-out, top .5s ease-in-out, transform 1.9s ease-in, opacity .4s; }
+.zg-waggon svg { display: block; width: 100%; height: auto; pointer-events: none; }
+.zg-waggon b { position: absolute; left: 0; right: 0; top: 37px; height: 50px; text-align: center; font: 400 40px/50px "Grundschrift", sans-serif; color: var(--tinte); pointer-events: none; }
+.zg-waggon b.mittel { font-size: 33px; }
+.zg-waggon b.lang { font-size: 27px; }
+.zg-waggon.kommt { animation: reinkommen .4s backwards; }
+.zg-waggon.dran { cursor: default; }
+.zg-waggon.hilfe .zg-schild, .zg-waggon.an .zg-schild { fill: var(--sonne); }      /* Hilfe nach dem zweiten Fehler; Silbe wird gerade gesprochen */
+.zg-waggon.hilfe { animation: pulsknopf 1s ease-in-out infinite; }
+.zg-waggon.bleibt { opacity: .35; }                                                 /* der falsche Waggon bleibt stehen */
+.zg-lok.ab, .zg-waggon.ab { transform: translateX(-1200px); }                       /* Abfahrt nach links */
+.zg-lok.ab { transition: transform 1.9s ease-in; }                                  /* die Abfahrt dauert etwas länger als die Einfahrt */
+
+/* ---------- v0.28.2: Düsen im Weltraum, ruhigere Karte ---------- */
+/* Vier kleine Düsen am Rand der Blase, in der die Figur im Weltraum schwebt (links, rechts, oben, unten) */
+.duesen i { position: absolute; width: 16px; height: 10px; border-radius: 4px; background: #c8ccd9; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .18); }
+.duesen i:nth-child(1) { left: -22%; top: 34%; }
+.duesen i:nth-child(2) { right: -22%; top: 34%; }
+.duesen i:nth-child(3) { left: 42%; top: -30%; width: 10px; height: 16px; box-shadow: inset -3px 0 0 rgba(0, 0, 0, .18); }
+.duesen i:nth-child(4) { left: 42%; top: 90%; width: 10px; height: 16px; box-shadow: inset -3px 0 0 rgba(0, 0, 0, .18); }
+/* Luftstoß: beginnt am Rand der Blase und zieht entgegen der Fahrtrichtung weg (--dx, --dy aus js/welt.js) */
+@keyframes duesenstoss { from { transform: translate(-50%, -50%) scale(.6); opacity: .9; } to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.7); opacity: 0; } }
+.duese { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, .85); pointer-events: none; z-index: 2; animation: duesenstoss .6s ease-out forwards; }
+/* Karte: „ABC“ und „123“ stehen an den Spielen nur, solange der Fach-Filter an ist. Das Fundstück bleibt immer,
+   ebenso das Dreieck der freien Spiele und das Werkzeug-Zeichen der Spielplätze (beides zeigt der Filter nicht). */
+.karte-spiele .zeichen.f-deutsch .z-fach, .karte-spiele .zeichen.f-mathe .z-fach { display: none; }
+#karte.zeig-deutsch .karte-spiele .zeichen.f-deutsch .z-fach, #karte.zeig-mathe .karte-spiele .zeichen.f-mathe .z-fach { display: block; }
+
+/* ---------- v0.29: Zahlenmauer auf der Baustelle (js/aufgaben/zahlenmauer.js) ---------- */
+/* Ein Stein der Mauer und ein Stein zur Wahl sehen gleich aus. Die Maße stehen auch im Spiel (STEIN_B, STEIN_H). */
+.zm-stein { position: absolute; width: 150px; height: 84px; border-radius: 12px; background: #d9825b; color: var(--papier); text-align: center; box-shadow: inset 0 -12px 0 rgba(0, 0, 0, .14), inset 0 5px 0 rgba(255, 255, 255, .2); }
+.zm-stein b { display: block; font: 400 54px/76px "Grundschrift", sans-serif; pointer-events: none; }
+.zm-stein.an { background: var(--sonne); color: var(--tinte); }                     /* gehört zur Rechnung, die gerade gesprochen wird */
+/* Lücke: gestrichelter Umriss mit Fragezeichen. „wartet“ = kommt später dran, „dran“ = diese Zahl ist gesucht */
+.zm-stein.luecke { background: rgba(255, 248, 234, .4); box-shadow: none; border: 5px dashed #bf6a46; color: #bf6a46; }
+.zm-stein.luecke b { line-height: 68px; }
+.zm-stein.luecke.wartet { opacity: .45; }
+.zm-stein.luecke.dran { animation: pulsknopf 1.2s ease-in-out infinite; }
+/* Hilfe nach dem zweiten Fehler: die Zahl rückt hoch, darunter stehen Punkte zum Abzählen (fünf je Reihe) */
+.zm-punkte { display: none; width: 74px; margin: 0 auto; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.zm-stein.mit-punkten b { font-size: 32px; line-height: 38px; }
+.zm-stein.mit-punkten .zm-punkte { display: flex; }
+.zm-punkte i { width: 11px; height: 11px; border-radius: 50%; background: var(--papier); }
+.zm-punkte i.b { background: var(--sonne); }
+.zm-stein.an .zm-punkte i { background: var(--tinte); }
+/* Steine zur Wahl auf der Palette; der richtige fliegt am Kran in die Lücke */
+.zm-wahl { z-index: 2; }
+.zm-wahl.kommt { animation: reinkommen .4s backwards; }
+.zm-wahl.fliegt { transition: left .65s ease-in-out, top .65s ease-in-out; }
+.zm-wahl.falsch { opacity: .35; animation: wackel .45s; }
+.zm-sockel { position: absolute; height: 16px; border-radius: 6px; background: #b9b4ab; box-shadow: inset 0 -5px 0 rgba(0, 0, 0, .14); }
+/* Kran: Die Laufkatze fährt am Ausleger, das Seil reicht bis zum Stein */
+.zm-katze { position: absolute; left: 512px; top: 98px; width: 36px; height: 18px; margin-left: -18px; border-radius: 5px; background: var(--tinte); pointer-events: none; z-index: 3; transition: left .65s ease-in-out; }
+.zm-seil { position: absolute; left: 512px; top: 112px; width: 4px; height: 0; margin-left: -2px; background: var(--tinte); pointer-events: none; z-index: 3; transition: left .65s ease-in-out, height .65s ease-in-out; }
+.zm-sofort { transition: none !important; }
+.zm-fahne { position: absolute; width: 64px; pointer-events: none; animation: plopp .45s backwards; }
+.zm-fahne svg { display: block; width: 100%; height: auto; }

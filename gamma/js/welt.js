@@ -126,6 +126,17 @@
     setTimeout(() => el.remove(), 1600);
   }
 
+  // Im Weltraum („duesen“ am Ort): Die Figur schwebt und steuert mit kleinen Luftdüsen. Solange sie fährt, stoßen
+  // die Düsen Luft aus, immer entgegen der Fahrtrichtung (rx, ry): Der Stoß beginnt am Rand ihrer Blase und zieht weg.
+  let dueseZuletzt = 0;
+  function duese(rx, ry) {
+    const el = document.createElement("i"), g = 9 + Math.random() * 9, quer = (Math.random() - 0.5) * 30;
+    el.className = "duese";
+    el.style.cssText = `left:${(pos.x - rx * 62 - ry * quer).toFixed(0)}px;top:${(pos.y - ry * 62 + rx * quer).toFixed(0)}px;width:${g.toFixed(0)}px;height:${g.toFixed(0)}px;--dx:${(-rx * 64).toFixed(0)}px;--dy:${(-ry * 64).toFixed(0)}px`;
+    $("#welt").appendChild(el);
+    setTimeout(() => el.remove(), 700);
+  }
+
   // Finger auf der Welt: dorthin soll die Figur fahren
   function richteEin() {
     if (eingerichtet) return;
@@ -209,7 +220,8 @@
       zonen.push({ art: "rand", richtung, zielId, bald: !!zielOrt.bald, zu, el, drin: (p) => amRand(richtung, p) });
     }
     schicht.insertAdjacentHTML("beforeend", `<div id="welt-ziel"></div><div id="welt-rover" class="rover">${B.rover()}${
-      ort.anbau && App.werkstatt.hat(ort.anbau) ? `<span class="anbau anbau-${ort.anbau}">${App.werkstatt.teilBild(ort.anbau)}</span>` : ""}</div>`);
+      ort.anbau && App.werkstatt.hat(ort.anbau) ? `<span class="anbau anbau-${ort.anbau}">${App.werkstatt.teilBild(ort.anbau)}</span>` : ""}${
+      ort.duesen ? `<span class="duesen"><i></i><i></i><i></i><i></i></span>` : ""}</div>`);   // vier kleine Düsen am Rand der Blase
 
     // Startplatz der Figur
     let start = ort.rover || { x: 512, y: 540 };
@@ -250,6 +262,7 @@
       if (rover) rover.classList.toggle("faehrt", faehrt);
       if (spur) zeichneSpur(dt, jetzt);
       if (ort.blasen && faehrt && jetzt - blaseZuletzt > 170) { blaseZuletzt = jetzt; blase(); }
+      if (ort.duesen && faehrt && jetzt - dueseZuletzt > 55) { dueseZuletzt = jetzt; duese(rx, ry); }
       // Der echte Roboter fährt langsam mit: nach oben = vorwärts, nach unten = rückwärts, seitlich = drehen
       if (App.stand.einst.mitfahren) {
         if (faehrt) MBot.fahre(-ry, rx * 0.8, MITFAHR_TEMPO);

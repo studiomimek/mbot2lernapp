@@ -38,6 +38,8 @@
  *             Richtig und Falsch, ohne Fundstück; die Fähre dorthin kostet keinen Treibstoff).
  *   anbau     Bauteil, das an diesem Ort an der Figur zu sehen ist (nur wenn sie es schon hat)
  *   werkstatt Platz des Krebs-Mechanikers: x/y = Mitte, breite, figur = Bild. Er baut die Bauteile.
+ *   blasen    true = unter Wasser: Beim Fahren steigen Luftblasen auf. duesen: true = im Weltraum: Beim Fahren
+ *             stoßen kleine Düsen Luft aus, entgegen der Fahrtrichtung.
  *   spur      Farbe der Fahrspuren, die die Figur hinterlässt (Sand, Staub). Ohne „spur“ gibt es keine Spuren.
  *   entdeckungen  Verstecke: Stellen, die sich mit einem Werkzeug öffnen (seit v0.17). „werkzeug“ = Bauteil aus
  *             inhalt/bauteile.js (schaufel, greifarm, fernrohr). Zu sehen sind sie erst, wenn die Figur das
@@ -97,7 +99,7 @@ App.inhalt.welt = {
       rover: { x: 430, y: 620 }, boden: 446, spur: "rgba(170, 128, 70, .7)",
       nachbarn: { links: "strand" },
       tore: [
-        { id: "faehre", x: 560, y: 398, r: 66, figur: "figurFaehre", breite: 250, faehre: true },
+        { id: "faehre", x: 560, y: 382, r: 66, figur: "figurFaehre", breite: 250, faehre: true },
         { id: "turmtuer", x: 187, y: 420, r: 70, figur: "figurTuer", breite: 70, ziel: "leuchtturm", leuchtet: true },   // die Tür unten im Leuchtturm (großer Umkreis: auch ein Tipp knapp darunter führt hinein)
       ],
       einstiege: [
@@ -185,7 +187,7 @@ App.inhalt.welt = {
     },
     weltraum: {
       name: "Weltraum", bild: "weltraum", ansage: "Im Weltraum.", licht: [80, 0, 255], karte: [5, 0],   // rechts von der Rakete, wie beim Fahren
-      rover: { x: 480, y: 600 }, boden: 110,
+      rover: { x: 480, y: 600 }, boden: 110, duesen: true,   // duesen: beim Fahren stoßen kleine Düsen Luft aus
       nachbarn: { links: "rakete" },
       tore: [
         { id: "landung", x: 150, y: 590, r: 56, figur: "figurLandung", breite: 96, ziel: "raketenstation", karteWeg: false, ansage: "Gelandet! Zurück an der Raketenstation." },
@@ -274,6 +276,33 @@ App.inhalt.welt = {
           x: 600, y: 540, breite: 300, inhalt: {} },
       ],
     },
+    // Erster Ort der neuen Insel (seit v0.28): der Bahnhof. Nur mit der Fähre zu erreichen. Rechts geht es zur
+    // Baustelle weiter (seit v0.29), von dort später zum Dschungel (noch nicht gebaut, siehe „geplant“).
+    bahnhof: {
+      name: "Bahnhof", bild: "bahnhof", ansage: "Am Bahnhof.", nach: "zum Bahnhof", licht: [255, 60, 30], karte: [7, 1],
+      rover: { x: 400, y: 650 }, boden: 410, spur: "rgba(110, 100, 92, .5)",
+      braucht: "pfeife", anbau: "pfeife",
+      nachbarn: { rechts: "baustelle" },
+      tore: [
+        { id: "faehre", x: 176, y: 322, r: 100, figur: "figurFaehre", breite: 220, faehre: true },   // im Meer vor dem Ufer
+      ],
+      einstiege: [
+        { id: "zug", titel: "Silbenzug", aufgabe: "silbenzug", figur: "figurLok", fach: "deutsch",
+          x: 640, y: 548, breite: 360, fund: "fahrkarte", inhalt: { runden: 5 } },
+      ],
+    },
+    // Zweiter Ort der neuen Insel (seit v0.29): die Baustelle, rechts vom Bahnhof. Das Gleis kommt links herein und
+    // endet hier. Rechts geht es später zum Dschungel.
+    baustelle: {
+      name: "Baustelle", bild: "baustelle", ansage: "Auf der Baustelle.", licht: [255, 180, 0], karte: [8, 1],
+      rover: { x: 220, y: 540 }, boden: 410, spur: "rgba(130, 100, 70, .5)",
+      braucht: "bauhelm", anbau: "bauhelm",
+      nachbarn: { links: "bahnhof" },
+      einstiege: [
+        { id: "mauer", titel: "Zahlenmauer", aufgabe: "zahlenmauer", figur: "figurMauer", fach: "mathe",
+          x: 620, y: 520, breite: 320, fund: "schraube", inhalt: { runden: 5 } },
+      ],
+    },
     wrack: {
       name: "Piratenwrack", bild: "wrack", ansage: "Beim Piratenwrack.", licht: [0, 200, 160], karte: [1, 2],
       rover: { x: 512, y: 220 }, boden: 60,
@@ -295,8 +324,6 @@ App.inhalt.welt = {
   // darauf spricht „sag“. Wird ein Ort gebaut, kommt er nach „orte“ und sein Eintrag hier fällt weg.
   geplant: [
     { id: "sternwarte", name: "Sternwarte", karte: [0, 1], sag: "Die Sternwarte wird noch gebaut." },
-    { id: "bahnhof", name: "Bahnhof", karte: [7, 1], sag: "Der Bahnhof wird noch gebaut." },
-    { id: "baustelle", name: "Baustelle", karte: [8, 1], sag: "Die Baustelle wird noch gebaut." },
     { id: "dschungel", name: "Dschungel", karte: [9, 1], sag: "Der Dschungel wird noch gebaut." },
     { id: "schrottplanet", name: "Schrottplanet", karte: [6, 0], sag: "Der Schrottplanet wird noch gebaut." },
   ],

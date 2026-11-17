@@ -9,24 +9,13 @@
 (() => {
   const { $, $$ } = App;
 
-  // Sind alle Buchstaben des Wortes aktiv? (au, ei, eu, sch zählen als eigene Lautverbindung)
-  function lesbar(silben, aktiv) {
-    let w = silben.join("").toLowerCase();
-    for (const g of ["sch", "ei", "au", "eu"]) {
-      if (!w.includes(g)) continue;
-      if (!aktiv.includes(g[0].toUpperCase() + g.slice(1))) return false;
-      w = w.split(g).join("");
-    }
-    return Array.from(w).every((c) => aktiv.includes(c.toUpperCase()));
-  }
-
   App.aufgaben["lesen"] = {
     hintergrund: "wrackNah",
 
     start(feld, ctx) {
       const alle = App.inhalt.woerter;
       const aktiv = App.buchstabenAktiv();
-      let vorrat = alle.filter(([silben]) => lesbar(silben, aktiv));
+      let vorrat = alle.filter(([silben]) => App.lesbar(silben, aktiv));   // nur Wörter aus aktiven Buchstaben (js/kern.js)
       if (vorrat.length < 3) { App.log(`Lesen: nur ${vorrat.length} lesbare Wörter, nehme alle Wörter.`, "w"); vorrat = alle; }
       const runden = ctx.einstieg.inhalt.runden || 5;
       const liste = [];
